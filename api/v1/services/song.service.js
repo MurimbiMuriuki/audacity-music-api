@@ -14,10 +14,10 @@ module.exports = {
         }
     },
 
-    async getAllUploadSong(search) {
+    async getAllUploadSong(search, page = 1, limit = 10) {
         try {
             let condition = {};
-
+            const offset = (page - 1) * limit;
 
             if (search) {
                 condition = {
@@ -36,12 +36,14 @@ module.exports = {
                 };
             }
 
-            const songs = await db.songObj.findAll({
+            const { count, rows } = await db.songObj.findAndCountAll({
                 where: condition,
-                order: [["createdAt", "DESC"]]
+                order: [["createdAt", "DESC"]],
+                limit,
+                offset
             });
 
-            return songs;
+            return { total: count, page, totalPages: Math.ceil(count / limit), songs: rows };
         } catch (e) {
             logger.errorLog.log("error", commonHelper.customizeCatchMsg(e));
             throw e;
@@ -83,20 +85,25 @@ module.exports = {
             throw e;
         }
     },
-    async getSongsByArtist(artistName) {
+    async getSongsByArtist(artistName, page = 1, limit = 10) {
         try {
-            const songs = await db.songObj.findAll({
+            const offset = (page - 1) * limit;
+            const { count, rows } = await db.songObj.findAndCountAll({
                 where: {
                     artistName: artistName
                 },
-                order: [["createdAt", "DESC"]]
+                order: [["createdAt", "DESC"]],
+                limit,
+                offset
             });
 
             return {
                 artistName: artistName,
-                songCount: songs.length,
-                avatar: songs.cover,
-                songs: songs
+                songCount: count,
+                avatar: rows[0]?.coverUrl || null,
+                page,
+                totalPages: Math.ceil(count / limit),
+                songs: rows
             };
 
         } catch (e) {

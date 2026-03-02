@@ -1,17 +1,13 @@
+require('dotenv').config();
 const express = require("express");
-const cors = require("cors"); // ✅ UNCOMMENT THIS
+const cors = require("cors");
 const bodyParser = require("body-parser");
-const swaggerUi = require("swagger-ui-express");
 const logMiddleware = require('./api/v1/middleware/dbLogger');
-const swaggerDocumentV_1_0_0 = require("./apidocs/apiDoc.v1.0.0.json");
-const auths = require("basic-auth");
 const path = require("path");
 const fs = require("fs");
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-const ipWhitelist = require('./api/v1/middleware/ip.middleware');
-require('dotenv').config();
+const PORT = process.env.PORT || 8000;
 
 // ✅ ENABLE CORS HERE
 app.use(cors({
@@ -37,44 +33,14 @@ app.use((req, res, next) => {
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// ✅ REMOVE this manual CORS block (you don't need both)
-// app.use(function (req, res, next) {
-//   res.header("Access-Control-Allow-Origin", "*");
-//   res.header(
-//     "Access-Control-Allow-Headers",
-//     "Origin, X-Requested-With, Content-Type, Accept"
-//   );
-//   next();
-// });
-
-// behind Apache on the same box
-// app.set('trust proxy', 'loopback'); // or: app.set('trust proxy', 1)
-app.set('trust proxy', 2);
 
 
 app.use(logMiddleware);  // Add your log middleware here
 
 
-// read fixed IPs from .env
-const ALLOW_IP = (process.env.IP_ALLOWLIST || '')
-  .split(/[,\s]+/)
-  .map(s => s.trim())
-  .filter(Boolean);
-
-// Apply whitelist to everything in this router...
-app.use(
-  ipWhitelist(ALLOW_IP, {
-    // ...except these 2–3 endpoints:
-    exceptRoutes: [
-      { method: 'POST', path: /^\/api\/v1\/candidate\/save$/ },
-      { method: 'POST', path: /^\/api\/v1\/candidateSale\/save$/ },
-      // { method: 'POST', path: /^\/api\/v1\/auth\/login$/ }
-    ]
-  })
-);
 
 
-app.get("/", (req, res) => {
+app.get("/test", (req, res) => {
   res.send("404");
 });
 

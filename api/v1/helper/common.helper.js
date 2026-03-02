@@ -1,9 +1,3 @@
-const bodyParser = require('body-parser');
-const axios = require('axios');
-require('dotenv').config(); // if using .env
-const moment = require("moment-timezone");
-const { trackActivity } = require("../helper/constants");
-const db = require("../models");
 
 module.exports = {
   getObjFirstValue(obj) {

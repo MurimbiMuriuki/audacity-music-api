@@ -1,15 +1,4 @@
-require("dotenv").config();
-var commonHelper = require("../helper/common.helper");
-var bcrypt = require("bcryptjs");
-const config = require("../../../config/db.config");
-var jwt = require("jsonwebtoken");
 const playListSongService = require("../services/playListSong.service");
-const { check, validationResult } = require("express-validator"); // Updated import
-const myValidationResult = validationResult.withDefaults({
-    formatter: (error) => {
-        return error.msg;
-    },
-});
 
 
 module.exports = {

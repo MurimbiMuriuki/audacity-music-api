@@ -1,15 +1,4 @@
-require("dotenv").config();
-var commonHelper = require("../helper/common.helper");
-var bcrypt = require("bcryptjs");
-const config = require("../../../config/db.config");
-var jwt = require("jsonwebtoken");
 const songServices = require("../services/song.service");
-const { check, validationResult } = require("express-validator"); // Updated import
-const myValidationResult = validationResult.withDefaults({
-    formatter: (error) => {
-        return error.msg;
-    },
-});
 
 
 module.exports = {
@@ -59,15 +48,16 @@ module.exports = {
     },
     async getAllUploadSong(req, res) {
         try {
-
             const { search } = req.query;
-            const songs = await songServices.getAllUploadSong(search);
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 10;
+
+            const result = await songServices.getAllUploadSong(search, page, limit);
 
             res.status(200).json({
                 success: true,
                 message: "Songs fetched successfully",
-                count: songs.length,
-                data: songs
+                data: result
             });
 
         } catch (error) {

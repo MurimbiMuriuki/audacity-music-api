@@ -20,7 +20,7 @@ module.exports = {
         name: process.env.DEFAULT_USERNAME,
         email: process.env.DEFAULT_EMAIL,
         password: hashedPassword, 
-        phone: "9876543210",
+        phone: "123456789",
         status: 1,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -35,6 +35,6 @@ module.exports = {
      * Example:
      * await queryInterface.bulkDelete('People', null, {});
      */
-    await queryInterface.bulkDelete("users", { email: "admin@gmail" });
+    await queryInterface.bulkDelete("users", { email: "parveen@acewebx.com" });
   }
 };

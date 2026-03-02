@@ -1,6 +1,6 @@
 var express = require("express");
 var router = express.Router();
-const playListController = require("../controller/ playList.controller");
+const playListController = require("../controller/playList.controller");
 var { authJwt } = require("../middleware");
 const upload = require("../../../config/multer");
 

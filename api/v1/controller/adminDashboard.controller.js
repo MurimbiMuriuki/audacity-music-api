@@ -1,15 +1,4 @@
-require("dotenv").config();
-var commonHelper = require("../helper/common.helper");
-var bcrypt = require("bcryptjs");
-const config = require("../../../config/db.config");
-var jwt = require("jsonwebtoken");
 const adminDashboardService = require("../services/adminDashboard.services");
-const { check, validationResult } = require("express-validator"); 
-const myValidationResult = validationResult.withDefaults({
-    formatter: (error) => {
-        return error.msg;
-    },
-});
 const { Parser } = require("json2csv");
 
 module.exports = {

@@ -1,5 +1,3 @@
-require("dotenv").config();
-
 module.exports = {
   HOST: process.env.DB_HOST,
   USER: process.env.DB_USERNAME,
@@ -13,5 +11,5 @@ module.exports = {
     acquire: 30000,
     idle: 10000,
   },
-  secret: "5f3089-40c3-403d-af14-456456",
+  secret: process.env.JWT_SECRET,
 };
