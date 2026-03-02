@@ -1,0 +1,43 @@
+var commonHelper = require("../helper/common.helper");
+const logger = require("../../../config/winston");
+const db = require("../models");
+const { Op, fn, col, where } = require("sequelize");
+module.exports = {
+
+    async createPlaylistSong(postData) {
+        try {
+            const playlistSong = await db.playlistSongObj.create(postData);
+            return playlistSong;
+        } catch (error) {
+            logger.errorLog.log("error", commonHelper.customizeCatchMsg(error));
+            throw error;
+        }
+    },
+
+    async getAllSongsByPlaylist(playlistId) {
+        try {
+
+            const songs = await db.playlistSongObj.findAll({
+                where: { playlistId },
+                include: [
+                    {
+                        model: db.playlistObj,
+                        as: "playlist", 
+                        
+                    },
+                    {
+                        model: db.songObj,
+                        as: "song", 
+                        attributes: ["id", "userId", "artistName", "title", "coverUrl", "audioUrl"],
+                    },
+                ],
+            });
+
+            return songs;
+        } catch (error) {
+            logger.errorLog.log("error", commonHelper.customizeCatchMsg(error));
+            throw error;
+        }
+    },
+}
+

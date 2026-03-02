@@ -1,0 +1,157 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "version": "1.0.1",
+    "title": "CRM",
+    "description": "CRM API",
+    "termsOfService": ""
+  },
+  "servers": [
+    {
+      "url": "/api/v1/",
+      "description": "API verion"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Auth Events"
+    }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "description": "Register User",
+        "operationId": "authRegister",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "required": [
+                  "email",
+                  "name",
+                  "password",
+                  "phone",
+                  "designation",
+                  "currentSalary",
+                  "expectedSalary"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Full name (mapped to DB column `name`)"
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "Email (mapped to DB column `email`)"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "Password (mapped to DB column `password`)"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "description": "Phone number (mapped to DB column `phone`)"
+                  },
+                  "designation": {
+                    "type": "string",
+                    "description": "Designation (mapped to DB column `designation`)"
+                  },
+                  "role": {
+                    "type": "integer",
+                    "description": "Role ID (mapped to DB column `role`, nullable)"
+                  },
+                  "currentSalary": {
+                    "type": "number",
+                    "format": "decimal",
+                    "description": "Current salary (mapped to DB column `currentSalary`)"
+                  },
+                  "expectedSalary": {
+                    "type": "number",
+                    "format": "decimal",
+                    "description": "Expected salary (mapped to DB column `expectedSalary`)"
+                  },
+                  "noticePeriod": {
+                    "type": "integer",
+                    "description": "Notice period (optional, mapped to DB column `noticePeriod`)"
+                  },
+                  "status": {
+                    "type": "integer",
+                    "description": "User status (default 0 = inactive, mapped to `status`)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response"
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "description": "Login User",
+        "operationId": "authLogin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "description": "Email",
+                    "example": "testexample.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "password",
+                    "example": "12345"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "jwt": {
+        "type": "apiKey",
+        "name": "x-access-token",
+        "in": "header"
+      }
+    }
+  }
+}
