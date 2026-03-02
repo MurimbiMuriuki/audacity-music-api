@@ -1,7 +1,6 @@
-var winston = require("winston");
-var appRoot = "log/nodejs";
+const winston = require("winston");
+const appRoot = "log/nodejs";
 const { combine, splat, timestamp, printf } = winston.format;
-console.log(`${appRoot}/nodejs_api_error.log`);
 const myFormat = printf(({ level, message, timestamp, ...metadata }) => {
   let msg = `${timestamp} [${level}] : ${message} `;
   if (metadata) {
@@ -13,7 +12,7 @@ const myFormat = printf(({ level, message, timestamp, ...metadata }) => {
   return msg;
 });
 
-let errorLog = winston.createLogger({
+const errorLog = winston.createLogger({
   level: winston.config.npm.levels,
   format: combine(splat(), timestamp(), myFormat),
   transports: [
@@ -26,7 +25,7 @@ let errorLog = winston.createLogger({
   exitOnError: false,
 });
 
-let infoLog = winston.createLogger({
+const infoLog = winston.createLogger({
   level: winston.config.npm.levels,
   format: combine(timestamp(), myFormat),
   transports: [
@@ -38,7 +37,7 @@ let infoLog = winston.createLogger({
   exitOnError: false,
 });
 
-let accessLog = winston.createLogger({
+const accessLog = winston.createLogger({
   level: "http",
   format: combine(splat(), timestamp(), myFormat),
   transports: [

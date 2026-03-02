@@ -192,12 +192,11 @@ module.exports = {
      async login(req, res) {
         try {
             
-            let  { email, password } = req.body;
+            const { email, password } = req.body;
             const getUserInfo = await authServices.getUserByEmail(email);
-            
+
             if (!getUserInfo) throw new Error("User not found");
-            let dbPassword = getUserInfo.password;
-            var passwordIsValid = bcrypt.compareSync(password, dbPassword);
+            const passwordIsValid = bcrypt.compareSync(password, getUserInfo.password);
             if (!passwordIsValid) throw new Error("Invalid Password!");
             const payload = {
                 id: getUserInfo.id,
@@ -205,17 +204,10 @@ module.exports = {
                 role: getUserInfo.role
             };
             const expiresIn = 60 * 60 * 24 * 30;
-            var accessToken = jwt.sign(payload, config.secret, {
-                expiresIn: expiresIn, 
+            const accessToken = jwt.sign(payload, config.secret, {
+                expiresIn: expiresIn,
             });
-        
-            // const { password: usesPass, ...userInfo } = getUserInfo;
-            // const userResponse = {
-            //     name: getUserInfo.name,
-            //     email: getUserInfo.email,
-            //     role: getUserInfo.role,
-            //     accessToken
-            // };
+
             const response = {
                 access_token: accessToken,
                 token_type: "bearer",
@@ -245,20 +237,19 @@ module.exports = {
         switch (method) {
             case "register": {
                 return [
-                    check("email").not().isEmpty().withMessage("Email is Required"),
-                    check("name").not().isEmpty().withMessage("name is Required"),
+                    check("email").not().isEmpty().withMessage("Email is Required").isEmail().withMessage("Invalid email format"),
+                    check("name").not().isEmpty().withMessage("Name is Required"),
                 ];
             }
             case "login": {
                 return [
-                    check("email").not().isEmpty().withMessage("Email is Required"),
+                    check("email").not().isEmpty().withMessage("Email is Required").isEmail().withMessage("Invalid email format"),
                     check("password").not().isEmpty().withMessage("Password is Required")
                 ];
             }
-            
-
+            default:
+                return [];
         }
-
     }
 
 }
