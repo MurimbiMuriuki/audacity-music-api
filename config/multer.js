@@ -1,6 +1,13 @@
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
 
+['uploads/covers', 'uploads/audios', 'uploads/playlists'].forEach(dir => {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+        console.log(`✅ Created: ${dir}`);
+    }
+});
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
