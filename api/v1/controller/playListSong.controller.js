@@ -63,6 +63,40 @@ module.exports = {
         }
     },
 
+    async removeSong(req, res) {
+        try {
+            const { playlistId, songId } = req.query;
+
+            if (!playlistId || !songId) {
+                return res.status(400).json({
+                    success: false,
+                    message: "playlistId and songId are required",
+                });
+            }
+
+            const deleted = await playListSongService.removeSong(playlistId, songId);
+
+            if (!deleted) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Song not found in playlist",
+                });
+            }
+
+            res.status(200).json({
+                success: true,
+                message: "Song removed from playlist successfully",
+            });
+
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({
+                success: false,
+                message: "Server error",
+            });
+        }
+    },
+
 
 
 }

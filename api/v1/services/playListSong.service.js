@@ -22,18 +22,30 @@ module.exports = {
                 include: [
                     {
                         model: db.playlistObj,
-                        as: "playlist", 
-                        
+                        as: "playlist",
+
                     },
                     {
                         model: db.songObj,
-                        as: "song", 
+                        as: "song",
                         attributes: ["id", "userId", "artistName", "title", "coverUrl", "audioUrl"],
                     },
                 ],
             });
 
             return songs;
+        } catch (error) {
+            logger.errorLog.log("error", commonHelper.customizeCatchMsg(error));
+            throw error;
+        }
+    },
+
+    async removeSong(playlistId, songId) {
+        try {
+            const deleted = await db.playlistSongObj.destroy({
+                where: { playlistId, songId }
+            });
+            return deleted;
         } catch (error) {
             logger.errorLog.log("error", commonHelper.customizeCatchMsg(error));
             throw error;

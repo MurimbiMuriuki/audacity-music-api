@@ -5,8 +5,9 @@ var { authJwt } = require("../middleware");
 const upload = require("../../../config/multer");
 
 
-router.post("/playListSong/addPlaylistSong", playListSongController.addPlaylistSong);
-router.get("/playListSong/getAllSongsByPlaylist", playListSongController.getAllSongsByPlaylist);
+router.post("/playListSong/addPlaylistSong", [authJwt.verifyToken],playListSongController.addPlaylistSong);
+router.get("/playListSong/getAllSongsByPlaylist", [authJwt.verifyToken],playListSongController.getAllSongsByPlaylist);
+router.delete("/playListSong/removeSong", [authJwt.verifyToken], playListSongController.removeSong);
 
 
 module.exports = router;

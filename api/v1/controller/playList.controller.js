@@ -5,7 +5,8 @@ module.exports = {
 
     async addPlaylist(req, res) {
         try {
-            const { userId, name } = req.body;
+            const userId = req.userId;
+            const { name } = req.body;
 
             if (!userId || !name) {
                 return res.status(400).json({
@@ -40,7 +41,7 @@ module.exports = {
 
     async getAllPlayList(req, res) {
         try {
-            const { userId } = req.query;
+            const userId = req.userId;
 
             const data = await playListService.getAllPlayList(userId);
 
@@ -57,7 +58,25 @@ module.exports = {
                 message: "Server error",
             });
         }
-    }
+    },
+    async sharePlaylist(req, res) {
+        try {
+            const { playlistId } = req.query;
+
+            res.status(200).json({
+                success: true,
+                message: "Playlist share link",
+                data: {
+                    shareUrl: `${process.env.APP_URL}/playlist/share/${playlistId}`
+                }
+            });
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                message: "Server error",
+            });
+        }
+    },
 
 
 }
