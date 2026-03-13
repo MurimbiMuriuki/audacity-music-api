@@ -5,7 +5,8 @@ module.exports = {
 
     async uploadSong(req, res) {
         try {
-            const { userId, artistName, title } = req.body;
+            const userId = req.userId;
+            const { artistName, title } = req.body;
 
             if (!req.files || !req.files.audio) {
                 return res.status(400).json({
@@ -39,6 +40,12 @@ module.exports = {
                 }
             });
         } catch (error) {
+            if (error.code === 'ENOENT') {
+                return res.status(500).json({
+                    success: false,
+                    message: `Upload folder does not exist: ${error.path}`,
+                });
+            }
             console.error(error);
             res.status(500).json({
                 success: false,
