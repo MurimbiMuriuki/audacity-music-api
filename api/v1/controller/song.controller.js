@@ -1,4 +1,6 @@
+const path = require("path");
 const songServices = require("../services/song.service");
+const { getAudioDuration } = require("../helper/audio.helper");
 
 
 module.exports = {
@@ -6,7 +8,7 @@ module.exports = {
     async uploadSong(req, res) {
         try {
             const userId = req.userId;
-            const { artistName, title } = req.body;
+            const { title } = req.body;
 
             if (!req.files || !req.files.audio) {
                 return res.status(400).json({
@@ -18,12 +20,15 @@ module.exports = {
             const coverFile = req.files.cover ? req.files.cover[0].filename : null;
             const audioFile = req.files.audio[0].filename;
 
+            const audioPath = path.join(__dirname, "../../../uploads/audios", audioFile);
+            const duration = await getAudioDuration(audioPath);
+
             const data = {
                 userId,
-                artistName,
                 title,
                 coverUrl: coverFile ? `/uploads/covers/${coverFile}` : null,
                 audioUrl: `/uploads/audios/${audioFile}`,
+                duration,
             };
 
             const song = await songServices.createSong(data);
@@ -132,10 +137,9 @@ module.exports = {
     async updateSong(req, res) {
         try {
             const { id } = req.query;
-            const { artistName, title } = req.body;
+            const { title } = req.body;
 
             let updateData = {
-                artistName,
                 title
             };
 
@@ -149,6 +153,12 @@ module.exports = {
             if (req.files && req.files.audio) {
                 const audioFile = req.files.audio[0].filename;
                 updateData.audioUrl = `/uploads/audios/${audioFile}`;
+
+                const audioPath = path.join(__dirname, "../../../uploads/audios", audioFile);
+                const duration = await getAudioDuration(audioPath);
+                if (duration !== null) {
+                    updateData.duration = duration;
+                }
             }
 
             const updated = await songServices.updateSong(id, updateData);
@@ -201,6 +211,41 @@ module.exports = {
             });
         }
     },
+
+    async getSongsByUserId(req, res) {
+        try {
+            const { userId } = req.query;
+
+            if (!userId) {
+                return res.status(400).json({
+                    success: false,
+                    message: "userId is required",
+                });
+            }
+
+            const result = await songServices.getSongsByUserId(userId);
+
+            if (!result) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Artist not found",
+                });
+            }
+
+            res.status(200).json({
+                success: true,
+                message: "Artist songs fetched successfully",
+                data: result,
+            });
+
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({
+                success: false,
+                message: "Server error"
+            });
+        }
+    },
     async searchDashboard(req, res) {
         try {
             const data = await songServices.searchDashboard();
@@ -215,6 +260,34 @@ module.exports = {
             res.status(500).json({
                 success: false,
                 message: "Server error"
+            });
+        }
+    },
+
+    async search(req, res) {
+        try {
+            const { q } = req.query;
+
+            if (!q || q.trim().length < 2) {
+                return res.status(200).json({
+                    success: true,
+                    message: "Search results",
+                    data: { songs: [], artists: [] },
+                });
+            }
+
+            const data = await songServices.searchSongsAndArtists(q.trim());
+
+            res.status(200).json({
+                success: true,
+                message: "Search results",
+                data,
+            });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({
+                success: false,
+                message: "Server error",
             });
         }
     },

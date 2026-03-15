@@ -2,6 +2,13 @@ var commonHelper = require("../helper/common.helper");
 const logger = require("../../../config/winston");
 const db = require("../models");
 const { Op, fn, col, where } = require("sequelize");
+
+const userInclude = {
+    model: db.usersObj,
+    as: "user",
+    attributes: ["id", "name", "artistName", "profileImage"],
+};
+
 module.exports = {
     /*createSong*/
     async createSong(postData) {
@@ -23,12 +30,17 @@ module.exports = {
                 condition = {
                     [db.Op.or]: [
                         {
-                            artistName: {
+                            title: {
                                 [db.Op.like]: `%${search}%`
                             }
                         },
                         {
-                            title: {
+                            "$user.artistName$": {
+                                [db.Op.like]: `%${search}%`
+                            }
+                        },
+                        {
+                            "$user.name$": {
                                 [db.Op.like]: `%${search}%`
                             }
                         }
@@ -38,12 +50,20 @@ module.exports = {
 
             const { count, rows } = await db.songObj.findAndCountAll({
                 where: condition,
+                include: [userInclude],
                 order: [["createdAt", "DESC"]],
                 limit,
-                offset
+                offset,
+                subQuery: false,
             });
 
-            return { total: count, page, totalPages: Math.ceil(count / limit), songs: rows };
+            const songs = rows.map(song => {
+                const plain = song.toJSON();
+                plain.artistName = plain.user?.artistName || plain.user?.name || null;
+                return plain;
+            });
+
+            return { total: count, page, totalPages: Math.ceil(count / limit), songs };
         } catch (e) {
             logger.errorLog.log("error", commonHelper.customizeCatchMsg(e));
             throw e;
@@ -52,8 +72,15 @@ module.exports = {
     async getByIdSong(id) {
         try {
             const song = await db.songObj.findOne({
-                where: { id: id }
+                where: { id: id },
+                include: [userInclude],
             });
+
+            if (song) {
+                const plain = song.toJSON();
+                plain.artistName = plain.user?.artistName || plain.user?.name || null;
+                return plain;
+            }
 
             return song;
         } catch (e) {
@@ -88,22 +115,41 @@ module.exports = {
     async getSongsByArtist(artistName, page = 1, limit = 10) {
         try {
             const offset = (page - 1) * limit;
-            const { count, rows } = await db.songObj.findAndCountAll({
+
+            // Find users matching the artistName
+            const user = await db.usersObj.findOne({
                 where: {
-                    artistName: artistName
-                },
+                    [db.Op.or]: [
+                        { artistName: artistName },
+                        { name: artistName },
+                    ]
+                }
+            });
+
+            if (!user) return null;
+
+            const { count, rows } = await db.songObj.findAndCountAll({
+                where: { userId: user.id },
+                include: [userInclude],
                 order: [["createdAt", "DESC"]],
                 limit,
                 offset
             });
 
+            const songs = rows.map(song => {
+                const plain = song.toJSON();
+                plain.artistName = plain.user?.artistName || plain.user?.name || null;
+                return plain;
+            });
+
             return {
-                artistName: artistName,
+                artistId: user.id,
+                artistName: user.artistName || user.name,
+                profileImage: user.profileImage,
                 songCount: count,
-                avatar: rows[0]?.coverUrl || null,
                 page,
                 totalPages: Math.ceil(count / limit),
-                songs: rows
+                songs
             };
 
         } catch (e) {
@@ -111,27 +157,137 @@ module.exports = {
             throw e;
         }
     },
+
+    async getSongsByUserId(userId, page = 1, limit = 10) {
+        try {
+            const offset = (page - 1) * limit;
+
+            const user = await db.usersObj.findByPk(userId, {
+                attributes: ["id", "name", "artistName", "profileImage"],
+            });
+
+            if (!user) return null;
+
+            const { count, rows } = await db.songObj.findAndCountAll({
+                where: { userId },
+                include: [userInclude],
+                order: [["createdAt", "DESC"]],
+                limit,
+                offset,
+            });
+
+            const songs = rows.map(song => {
+                const plain = song.toJSON();
+                plain.artistName = plain.user?.artistName || plain.user?.name || null;
+                return plain;
+            });
+
+            return {
+                artistId: user.id,
+                artistName: user.artistName || user.name,
+                profileImage: user.profileImage,
+                songCount: count,
+                page,
+                totalPages: Math.ceil(count / limit),
+                songs,
+            };
+        } catch (e) {
+            logger.errorLog.log("error", commonHelper.customizeCatchMsg(e));
+            throw e;
+        }
+    },
     async searchDashboard() {
         try {
-            // Trending artists (based on total streams)
-            const trendingArtists = await db.songObj.findAll({
+            // Trending artists (based on total streams per user)
+            const trendingArtists = await db.usersObj.findAll({
                 attributes: [
-                    "artistName",
-                    [db.Sequelize.fn("SUM", db.Sequelize.col("streamCount")), "totalStreams"]
+                    "id", "name", "artistName",
+                    [db.Sequelize.fn("SUM", db.Sequelize.col("songs.streamCount")), "totalStreams"]
                 ],
-                group: ["artistName"],
+                include: [{
+                    model: db.songObj,
+                    as: "songs",
+                    attributes: [],
+                    required: true,
+                }],
+                group: ["users.id"],
                 order: [[db.Sequelize.literal("totalStreams"), "DESC"]],
-                limit: 5
+                limit: 5,
+                subQuery: false,
             });
+
+            const formatted = trendingArtists.map(a => ({
+                artistName: a.artistName || a.name,
+                totalStreams: a.get("totalStreams"),
+            }));
 
             // Recent searches (static for now)
             const recentSearches = [];
 
             return {
                 recentSearches,
-                trendingArtists
+                trendingArtists: formatted
             };
 
+        } catch (e) {
+            logger.errorLog.log("error", commonHelper.customizeCatchMsg(e));
+            throw e;
+        }
+    },
+
+    async searchSongsAndArtists(query, limit = 10) {
+        try {
+            // Search songs by title, include user for artistName
+            const songs = await db.songObj.findAll({
+                where: {
+                    [db.Op.or]: [
+                        { title: { [db.Op.like]: `%${query}%` } },
+                        { "$user.artistName$": { [db.Op.like]: `%${query}%` } },
+                        { "$user.name$": { [db.Op.like]: `%${query}%` } },
+                    ],
+                },
+                include: [userInclude],
+                order: [["createdAt", "DESC"]],
+                limit,
+                subQuery: false,
+            });
+
+            const formattedSongs = songs.map(song => {
+                const plain = song.toJSON();
+                plain.artistName = plain.user?.artistName || plain.user?.name || null;
+                return plain;
+            });
+
+            // Search artists (users who have songs matching query)
+            const artists = await db.usersObj.findAll({
+                attributes: [
+                    "id", "name", "artistName", "profileImage",
+                    [db.Sequelize.fn("COUNT", db.Sequelize.col("songs.id")), "songCount"],
+                ],
+                include: [{
+                    model: db.songObj,
+                    as: "songs",
+                    attributes: [],
+                    required: true,
+                }],
+                where: {
+                    [db.Op.or]: [
+                        { name: { [db.Op.like]: `%${query}%` } },
+                        { artistName: { [db.Op.like]: `%${query}%` } },
+                    ],
+                },
+                group: ["users.id"],
+                limit,
+                subQuery: false,
+            });
+
+            const formattedArtists = artists.map(a => {
+                const plain = a.toJSON();
+                plain.artistName = plain.artistName || plain.name;
+                return plain;
+            });
+
+            return { songs: formattedSongs, artists: formattedArtists };
         } catch (e) {
             logger.errorLog.log("error", commonHelper.customizeCatchMsg(e));
             throw e;
@@ -153,21 +309,21 @@ module.exports = {
 
     async fetchLandingPageData() {
         try {
-            // Get 2 client-provided songs (latest 2 uploaded)
             const featuredSongs = await db.songObj.findAll({
-                attributes: ["id", "title", "artistName", "coverUrl", "audioUrl"],
+                attributes: ["id", "title", "coverUrl", "audioUrl"],
+                include: [userInclude],
                 order: [["createdAt", "DESC"]],
                 limit: 2,
             });
 
-            return featuredSongs
-            
-                
-            
+            return featuredSongs.map(song => {
+                const plain = song.toJSON();
+                plain.artistName = plain.user?.artistName || plain.user?.name || null;
+                return plain;
+            });
         } catch (error) {
             throw error;
         }
     }
 
 }
-

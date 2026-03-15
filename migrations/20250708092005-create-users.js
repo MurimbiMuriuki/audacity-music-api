@@ -45,6 +45,11 @@ module.exports = {
         allowNull: true,
       },
 
+      artistName: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+
       paypalEmail: {
         type: Sequelize.STRING,
         allowNull: true,

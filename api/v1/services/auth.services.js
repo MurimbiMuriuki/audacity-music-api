@@ -114,6 +114,44 @@ module.exports = {
             throw e;
         }
     },
+    /*findOrCreateGoogleUser*/
+    async findOrCreateGoogleUser({ email, name, googleId, profileImage }) {
+        try {
+            let user = await db.usersObj.findOne({
+                where: { email },
+            });
+
+            if (user) {
+                // Update provider info if not already set
+                if (!user.provider || !user.provider_id) {
+                    await db.usersObj.update(
+                        { provider: 'google', provider_id: googleId, profileImage: profileImage || user.profileImage },
+                        { where: { id: user.id } }
+                    );
+                    user = await db.usersObj.findOne({ where: { id: user.id } });
+                }
+                return user;
+            }
+
+            // Create new user (no password needed for social login)
+            user = await db.usersObj.create({
+                name,
+                email,
+                phone: '',
+                password: '',
+                provider: 'google',
+                provider_id: googleId,
+                profileImage: profileImage || null,
+                role: 'user',
+                status: 0,
+            });
+
+            return user;
+        } catch (e) {
+            logger.errorLog.log("error", commonHelper.customizeCatchMsg(e));
+            throw e;
+        }
+    },
      /*deleteUser*/
      async deleteUser(userId) {
         try {

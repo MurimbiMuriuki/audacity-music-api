@@ -20,7 +20,9 @@ router.put("/song/updateSong",[authJwt.verifyToken], upload.fields([
 ]), songController.updateSong);
 
 router.get("/song/getSongsByArtist",[authJwt.verifyToken], songController.getSongsByArtist);
+router.get("/song/getSongsByUserId",[authJwt.verifyToken], songController.getSongsByUserId);
 router.get("/song/searchDashboard", [authJwt.verifyToken],songController.searchDashboard);
+router.get("/song/search", [authJwt.verifyToken], songController.search);
 
 router.get("/public/getLandingPageSong", songController.getLandingPageSong);
 

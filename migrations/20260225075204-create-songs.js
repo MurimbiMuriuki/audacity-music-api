@@ -16,11 +16,6 @@ module.exports = {
         allowNull: true,
       },
 
-      artistName: {
-        type: Sequelize.STRING,
-        allowNull: true,
-      },
-
       title: {
         type: Sequelize.STRING,
         allowNull: true,
@@ -34,6 +29,12 @@ module.exports = {
       audioUrl: {
         type: Sequelize.STRING,
         allowNull: true,
+      },
+
+      duration: {
+        type: Sequelize.FLOAT,
+        allowNull: true,
+        defaultValue: null,
       },
 
       streamCount: {

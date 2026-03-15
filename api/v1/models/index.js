@@ -47,6 +47,16 @@ db.usersObj.hasMany(db.subscriptionObj, {
   as: "subscription"
 });
 
+db.usersObj.hasMany(db.songObj, {
+  foreignKey: "userId",
+  as: "songs"
+});
+
+db.songObj.belongsTo(db.usersObj, {
+  foreignKey: "userId",
+  as: "user"
+});
+
 
 
 // dbObj.sync({ force: false });

@@ -11,11 +11,6 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
     },
 
-    artistName: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-
     title: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -27,6 +22,11 @@ module.exports = (sequelize, DataTypes) => {
 
     audioUrl: {
       type: DataTypes.STRING,
+      allowNull: true,
+    },
+
+    duration: {
+      type: DataTypes.FLOAT,
       allowNull: true,
     },
 

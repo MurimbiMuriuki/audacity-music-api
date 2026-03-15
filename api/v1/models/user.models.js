@@ -44,6 +44,11 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
 
+      artistName: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
       paypalEmail: {
         type: DataTypes.STRING,
         allowNull: true,

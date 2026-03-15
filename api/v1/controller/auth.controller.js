@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const config = require("../../../config/db.config");
 const jwt = require("jsonwebtoken");
 const authServices = require("../services/auth.services");
+const { OAuth2Client } = require("google-auth-library");
 const { check, validationResult } = require("express-validator"); // Updated import
 const myValidationResult = validationResult.withDefaults({
     formatter: (error) => {
@@ -233,6 +234,75 @@ module.exports = {
 
     },
   
+    /*googleLogin*/
+    async googleLogin(req, res) {
+        try {
+            const { idToken } = req.body;
+
+            if (!idToken) {
+                return res.status(400).json({
+                    status: false,
+                    message: "Google ID token is required",
+                });
+            }
+
+            const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+            const ticket = await client.verifyIdToken({
+                idToken,
+                audience: [
+                    process.env.GOOGLE_CLIENT_ID,
+                    process.env.GOOGLE_IOS_CLIENT_ID,
+                ].filter(Boolean),
+            });
+
+            const googlePayload = ticket.getPayload();
+            const { sub: googleId, email, name, picture } = googlePayload;
+
+            if (!email) {
+                return res.status(400).json({
+                    status: false,
+                    message: "Google account does not have an email",
+                });
+            }
+
+            const user = await authServices.findOrCreateGoogleUser({
+                email,
+                name: name || email.split("@")[0],
+                googleId,
+                profileImage: picture || null,
+            });
+
+            const payload = {
+                id: user.id,
+                name: user.name,
+                role: user.role,
+            };
+            const expiresIn = 60 * 60 * 24 * 30;
+            const accessToken = jwt.sign(payload, config.secret, {
+                expiresIn,
+            });
+
+            return res.status(200).json({
+                access_token: accessToken,
+                token_type: "bearer",
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
+                    profileImage: user.profileImage,
+                },
+                expires_in: expiresIn,
+            });
+        } catch (error) {
+            console.error("Google login error:", error);
+            return res.status(400).json({
+                status: false,
+                message: error.message || "Google login failed",
+            });
+        }
+    },
+
     validate(method) {
         switch (method) {
             case "register": {

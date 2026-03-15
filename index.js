@@ -5,6 +5,8 @@ const logMiddleware = require('./api/v1/middleware/dbLogger');
 const path = require("path");
 const fs = require("fs");
 
+const setupSwagger = require("./config/swagger");
+
 const app = express();
 const PORT = process.env.PORT || 8000;
 
@@ -36,6 +38,9 @@ app.get("/uploads/cv/:fileName", (req, res) => {
     res.status(404).send("File not found");
   }
 });
+
+// Swagger API docs (password protected)
+setupSwagger(app);
 
 app.use("/api", require("./api"));
 
