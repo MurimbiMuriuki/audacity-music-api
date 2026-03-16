@@ -7,5 +7,6 @@ router.use(require("./playList.routes"));
 router.use(require("./playListSong.routes"));
 router.use(require("./adminDashboard.routes"));
 router.use(require("./contact.routes"));
+router.use(require("./subscription.routes"));
 
 module.exports = router;
