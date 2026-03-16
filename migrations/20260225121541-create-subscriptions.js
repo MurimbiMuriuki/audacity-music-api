@@ -27,6 +27,14 @@ module.exports = {
         allowNull: false,
         defaultValue: 'active'
       },
+      paystack_reference: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      paystack_customer_code: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
       created_at: {
         allowNull: false,
         type: Sequelize.DATE,

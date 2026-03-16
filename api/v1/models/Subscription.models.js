@@ -25,6 +25,14 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: 'active',
       },
+      paystack_reference: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      paystack_customer_code: {
+        type: DataTypes.STRING,
+        allowNull: true
+      }
     },
     {
       tableName: 'subscriptions',
