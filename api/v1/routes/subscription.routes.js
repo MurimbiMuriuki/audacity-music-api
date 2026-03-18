@@ -3,14 +3,21 @@ var router = express.Router();
 const subscriptionController = require("../controller/subscription.controller");
 var { authJwt } = require("../middleware");
 
-router.post("/subscription/addSubscription", subscriptionController.addSubscription);
-router.get("/subscription/getAllSubscrition", subscriptionController.getAllSubscription);
-router.get("/subscription/getByIdSubscription", subscriptionController.getByIdSubscription);
-router.delete("/subscription/deleteSubscription", subscriptionController.deleteSubscription);
-router.put("/subscription/updateSubscription", subscriptionController.updateSubscription);
+// Admin CRUD — all protected
+router.post("/subscription/addSubscription", [authJwt.verifyToken], subscriptionController.addSubscription);
+router.get("/subscription/getAllSubscrition", [authJwt.verifyToken], subscriptionController.getAllSubscription);
+router.get("/subscription/getByIdSubscription", [authJwt.verifyToken], subscriptionController.getByIdSubscription);
+router.delete("/subscription/deleteSubscription", [authJwt.verifyToken], subscriptionController.deleteSubscription);
+router.put("/subscription/updateSubscription", [authJwt.verifyToken], subscriptionController.updateSubscription);
 
-
+// Public
 router.get("/subscription/getPlans", subscriptionController.getPlans);
-router.post("/subscription/initiatePayment", [authJwt.verifyToken],subscriptionController.initiatePayment);
-router.get("/subscription/verify", subscriptionController.verifyPayment);
+
+// User — requires auth
+router.get("/subscription/my", [authJwt.verifyToken], subscriptionController.getMySubscription);
+router.post("/subscription/verify", [authJwt.verifyToken], subscriptionController.verifyPayment);
+
+// Paystack webhook — no auth (validated via signature)
+router.post("/subscription/webhook", subscriptionController.paystackWebhook);
+
 module.exports = router;

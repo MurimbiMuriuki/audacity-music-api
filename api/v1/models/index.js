@@ -35,6 +35,10 @@ db.playlistSongObj.belongsTo(db.playlistObj, {
   as: "playlist"
 });
 
+db.playlistObj.hasMany(db.playlistSongObj, {
+  foreignKey: "playlistId",
+  as: "playlistSongs"
+});
 
 db.playlistSongObj.belongsTo(db.songObj, {
   foreignKey: "songId",

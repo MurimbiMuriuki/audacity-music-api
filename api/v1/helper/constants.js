@@ -10,35 +10,18 @@ const PLAN_NAMES = {
   ANNUAL: 'Annual'
 };
 
-// const PLAN_PRICES = {
-//   Monthly: {
-//     amount: 3,
-//     currency: 'NGN',
-//     interval: 'month',
-//     description: 'Billed monthly via Paystack',
-//     recommended: false,
-//     savings: null
-//   },
-//   Annual: {
-//     amount: 16,
-//     currency: 'NGN',
-//     interval: 'year',
-//     description: '~$1.33/month · Billed annually',
-//     recommended: true,
-//     savings: 'SAVE 56%'
-//   }
-// };
-
 const PLAN_PRICES = {
   Monthly: {
-    amount: 3,        // $3 display ke liye
-    amount_ngn: 5000, // NGN mein test ke liye (5000 kobo = 50 Naira)
+    amount: 300,       // 300 kobo = 3 NGN (test mode)
+    display_amount: 3, // shown as $3 on frontend
     currency: 'NGN',
+    interval: 'month',
   },
   Annual: {
-    amount: 16,
-    amount_ngn: 10000, // NGN mein test ke liye
+    amount: 1600,       // 1600 kobo = 16 NGN (test mode)
+    display_amount: 16, // shown as $16 on frontend
     currency: 'NGN',
+    interval: 'year',
   }
 };
 

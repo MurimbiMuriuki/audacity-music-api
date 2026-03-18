@@ -15,31 +15,28 @@ module.exports = {
 
     async getAllPlayList(userId) {
         try {
-
             const playlists = await db.playlistObj.findAll({
                 where: { userId },
-                // include: [
-                //     {
-                //         model: db.songObj,
-                //         through: { attributes: [] }, // hide join table
-                //         attributes: ["id"], // only need id for count
-                //     }
-                // ],
+                include: [
+                    {
+                        model: db.playlistSongObj,
+                        as: "playlistSongs",
+                        attributes: ["id"],
+                    }
+                ],
                 order: [["createdAt", "DESC"]],
             });
 
-            // Add song count
-            // const formattedData = playlists.map(pl => {
-            //     return {
-            //         id: pl.id,
-            //         userId: pl.userId,
-            //         name: pl.name,
-            //         coverUrl: pl.coverUrl,
-            //         songCount: pl.Songs.length
-            //     };
-            // });
+            const formattedData = playlists.map(pl => {
+                const plain = pl.toJSON();
+                return {
+                    ...plain,
+                    songCount: plain.playlistSongs ? plain.playlistSongs.length : 0,
+                    playlistSongs: undefined,
+                };
+            });
 
-            return playlists;
+            return formattedData;
 
         } catch (e) {
             logger.errorLog.log("error", commonHelper.customizeCatchMsg(e));

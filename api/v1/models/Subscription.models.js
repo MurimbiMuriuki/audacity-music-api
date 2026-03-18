@@ -27,7 +27,8 @@ module.exports = (sequelize, DataTypes) => {
       },
       paystack_reference: {
         type: DataTypes.STRING,
-        allowNull: true
+        allowNull: true,
+        unique: true
       },
       paystack_customer_code: {
         type: DataTypes.STRING,
