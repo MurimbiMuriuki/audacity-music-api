@@ -60,11 +60,13 @@ module.exports = {
     },
     async getAllUploadSong(req, res) {
         try {
-            const { search } = req.query;
+            const { search, shuffle, seed } = req.query;
             const page = parseInt(req.query.page) || 1;
             const limit = parseInt(req.query.limit) || 10;
+            const isShuffle = shuffle === 'true';
+            const seedNum = seed ? parseInt(seed, 10) : null;
 
-            const result = await songServices.getAllUploadSong(search, page, limit);
+            const result = await songServices.getAllUploadSong(search, page, limit, isShuffle, seedNum);
 
             res.status(200).json({
                 success: true,

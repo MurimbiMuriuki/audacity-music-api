@@ -21,7 +21,7 @@ module.exports = {
         }
     },
 
-    async getAllUploadSong(search, page = 1, limit = 10) {
+    async getAllUploadSong(search, page = 1, limit = 10, shuffle = false, seed = null) {
         try {
             let condition = {};
             const offset = (page - 1) * limit;
@@ -48,10 +48,14 @@ module.exports = {
                 };
             }
 
+            const orderClause = shuffle && seed != null
+                ? [db.Sequelize.literal(`RAND(${parseInt(seed, 10)})`)]
+                : [["createdAt", "DESC"]];
+
             const { count, rows } = await db.songObj.findAndCountAll({
                 where: condition,
                 include: [userInclude],
-                order: [["createdAt", "DESC"]],
+                order: orderClause,
                 limit,
                 offset,
                 subQuery: false,
