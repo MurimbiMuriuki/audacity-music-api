@@ -252,6 +252,7 @@ module.exports = {
                 audience: [
                     process.env.GOOGLE_CLIENT_ID,
                     process.env.GOOGLE_IOS_CLIENT_ID,
+                    process.env.GOOGLE_ANDROID_CLIENT_ID,
                 ].filter(Boolean),
             });
 
