@@ -101,11 +101,37 @@ module.exports = {
         }
     },
 
+    async getMonthlyStreams(req, res) {
+        try {
+            const now = new Date();
+            const month = parseInt(req.query.month) || (now.getMonth() + 1);
+            const year = parseInt(req.query.year) || now.getFullYear();
+
+            const streams = await adminDashboardService.fetchMonthlyStreams(month, year);
+
+            res.status(200).json({
+                success: true,
+                message: "Monthly streams fetched successfully",
+                data: {
+                    month,
+                    year,
+                    artists: streams,
+                },
+            });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({
+                success: false,
+                message: "Server error",
+            });
+        }
+    },
+
     async exportArtistStreamsCsv(req, res) {
         try {
             const streams = await adminDashboardService.fetchArtistStreams();
 
-            const fields = ["artistName", "totalStreams", "last30DaysStreams", "paypalEmail"];
+            const fields = ["artistName", "totalStreams", "monthlyStreams", "paypalEmail"];
             const opts = { fields };
             const parser = new Parser(opts);
             const csv = parser.parse(streams);

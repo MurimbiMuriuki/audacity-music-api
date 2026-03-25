@@ -561,6 +561,52 @@ const swaggerDocument = {
       },
     },
 
+    "/song/stream": {
+      post: {
+        tags: ["Songs"],
+        summary: "Increment stream count for a song",
+        description: "Call this when a user listens to a song for 30+ seconds. Creates a stream record for monthly tracking and increments the song's total stream count.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["songId"],
+                properties: {
+                  songId: { type: "integer", example: 1 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Stream counted successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    message: { type: "string", example: "Stream counted successfully" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        streamCount: { type: "integer", example: 42 },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: "songId is required" },
+          404: { description: "Song not found" },
+        },
+      },
+    },
+
     // ─── PLAYLISTS ───
     "/playList/addPlaylist": {
       post: {
@@ -758,6 +804,73 @@ const swaggerDocument = {
         summary: "Get artist streams and payout data",
         responses: {
           200: { description: "Artist streams data" },
+        },
+      },
+    },
+    "/admin/getMonthlyStreams": {
+      get: {
+        tags: ["Admin"],
+        summary: "Get monthly streams per artist for payouts",
+        description: "Returns per-artist stream counts for a given month with per-song breakdown. Defaults to current month if no params provided.",
+        parameters: [
+          {
+            name: "month",
+            in: "query",
+            schema: { type: "integer", minimum: 1, maximum: 12, example: 3 },
+            description: "Month number (1-12). Defaults to current month.",
+          },
+          {
+            name: "year",
+            in: "query",
+            schema: { type: "integer", example: 2026 },
+            description: "Year. Defaults to current year.",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Monthly streams data",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    message: { type: "string" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        month: { type: "integer", example: 3 },
+                        year: { type: "integer", example: 2026 },
+                        artists: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              artistId: { type: "integer" },
+                              artistName: { type: "string" },
+                              paypalEmail: { type: "string", nullable: true },
+                              monthlyStreams: { type: "integer" },
+                              songs: {
+                                type: "array",
+                                items: {
+                                  type: "object",
+                                  properties: {
+                                    songId: { type: "integer" },
+                                    title: { type: "string" },
+                                    streams: { type: "integer" },
+                                  },
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       },
     },

@@ -12,6 +12,8 @@ router.delete("/admin/deleteSong",[authJwt.verifyToken], adminDashboardControlle
 
 // Get artist streams and payouts
 router.get("/admin/getArtistStreams",[authJwt.verifyToken], adminDashboardController.getArtistStreams);
+// Get monthly streams for payout (query: ?month=3&year=2026)
+router.get("/admin/getMonthlyStreams",[authJwt.verifyToken], adminDashboardController.getMonthlyStreams);
 // Export CSV for payout
 router.get("/admin/exportArtistStreamsCsv",[authJwt.verifyToken], adminDashboardController.exportArtistStreamsCsv);
 

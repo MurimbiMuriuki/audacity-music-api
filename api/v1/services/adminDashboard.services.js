@@ -146,10 +146,6 @@ module.exports = {
 
      async fetchArtistStreams() {
         try {
-            const today = new Date();
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(today.getDate() - 30);
-
             // Get all users who have songs
             const artists = await db.usersObj.findAll({
                 attributes: [
@@ -166,30 +162,115 @@ module.exports = {
                 subQuery: false,
             });
 
+            // Get current month boundaries
+            const now = new Date();
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
             const artistStats = await Promise.all(
                 artists.map(async (artist) => {
-                    const last30DaysStreams = await db.songObj.sum("streamCount", {
+                    // Get monthly streams from SongStreams table
+                    const monthlyStreams = await db.songStreamObj.count({
+                        include: [{
+                            model: db.songObj,
+                            as: "song",
+                            attributes: [],
+                            where: { userId: artist.id },
+                        }],
                         where: {
-                            userId: artist.id,
-                            createdAt: { [Op.gte]: thirtyDaysAgo }
-                        }
+                            createdAt: { [Op.between]: [monthStart, monthEnd] }
+                        },
                     });
 
-                    const subscription = await db.subscriptionObj.findOne({
-                        where: { user_id: artist.id }
-                    });
-                    const paypalEmail = subscription ? subscription.paypalEmail : null;
+                    const paypalEmail = artist.paypalEmail || null;
 
                     return {
+                        artistId: artist.id,
                         artistName: artist.artistName || artist.name,
                         totalStreams: parseInt(artist.get("totalStreams") || 0),
-                        last30DaysStreams: last30DaysStreams || 0,
+                        monthlyStreams: monthlyStreams || 0,
                         paypalEmail,
                     };
                 })
             );
 
             return artistStats;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    async fetchMonthlyStreams(month, year) {
+        try {
+            const monthStart = new Date(year, month - 1, 1);
+            const monthEnd = new Date(year, month, 0, 23, 59, 59, 999);
+
+            // Get per-artist streams for the given month
+            const artists = await db.usersObj.findAll({
+                attributes: [
+                    "id", "name", "artistName", "paypalEmail",
+                ],
+                include: [{
+                    model: db.songObj,
+                    as: "songs",
+                    attributes: [],
+                    required: true,
+                }],
+                group: ["users.id"],
+                subQuery: false,
+            });
+
+            const result = await Promise.all(
+                artists.map(async (artist) => {
+                    // Count streams for this artist's songs in the given month
+                    const monthlyStreams = await db.songStreamObj.count({
+                        include: [{
+                            model: db.songObj,
+                            as: "song",
+                            attributes: [],
+                            where: { userId: artist.id },
+                        }],
+                        where: {
+                            createdAt: { [Op.between]: [monthStart, monthEnd] }
+                        },
+                    });
+
+                    // Per-song breakdown
+                    const songStreams = await db.songStreamObj.findAll({
+                        attributes: [
+                            "songId",
+                            [fn("COUNT", col("SongStream.id")), "streams"],
+                        ],
+                        include: [{
+                            model: db.songObj,
+                            as: "song",
+                            attributes: ["title"],
+                            where: { userId: artist.id },
+                        }],
+                        where: {
+                            createdAt: { [Op.between]: [monthStart, monthEnd] }
+                        },
+                        group: ["songId"],
+                    });
+
+                    const songs = songStreams.map(s => ({
+                        songId: s.songId,
+                        title: s.song?.title,
+                        streams: parseInt(s.get("streams") || 0),
+                    }));
+
+                    return {
+                        artistId: artist.id,
+                        artistName: artist.artistName || artist.name,
+                        paypalEmail: artist.paypalEmail || null,
+                        monthlyStreams,
+                        songs,
+                    };
+                })
+            );
+
+            // Filter out artists with 0 streams
+            return result.filter(a => a.monthlyStreams > 0);
         } catch (error) {
             throw error;
         }

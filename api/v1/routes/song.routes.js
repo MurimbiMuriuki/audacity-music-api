@@ -23,6 +23,7 @@ router.get("/song/getSongsByArtist",[authJwt.verifyToken], songController.getSon
 router.get("/song/getSongsByUserId",[authJwt.verifyToken], songController.getSongsByUserId);
 router.get("/song/searchDashboard", [authJwt.verifyToken],songController.searchDashboard);
 router.get("/song/search", [authJwt.verifyToken], songController.search);
+router.post("/song/stream", [authJwt.verifyToken], songController.incrementStream);
 
 router.get("/public/getLandingPageSong", songController.getLandingPageSong);
 

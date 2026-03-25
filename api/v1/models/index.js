@@ -26,6 +26,7 @@ db.songObj = require("./song.models")(dbObj, Sequelize);
 db.playlistObj = require("./playList.models")(dbObj, Sequelize);
 db.playlistSongObj = require("./playListsSong.models")(dbObj, Sequelize);
 db.subscriptionObj = require("./Subscription.models")(dbObj, Sequelize);
+db.songStreamObj = require("./songStream.models")(dbObj, Sequelize);
 
 
 
@@ -59,6 +60,21 @@ db.usersObj.hasMany(db.songObj, {
 db.songObj.belongsTo(db.usersObj, {
   foreignKey: "userId",
   as: "user"
+});
+
+db.songObj.hasMany(db.songStreamObj, {
+  foreignKey: "songId",
+  as: "streams"
+});
+
+db.songStreamObj.belongsTo(db.songObj, {
+  foreignKey: "songId",
+  as: "song"
+});
+
+db.songStreamObj.belongsTo(db.usersObj, {
+  foreignKey: "userId",
+  as: "listener"
 });
 
 

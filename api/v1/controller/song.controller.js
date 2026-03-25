@@ -294,6 +294,41 @@ module.exports = {
         }
     },
 
+    async incrementStream(req, res) {
+        try {
+            const { songId } = req.body;
+            const userId = req.userId;
+
+            if (!songId) {
+                return res.status(400).json({
+                    success: false,
+                    message: "songId is required",
+                });
+            }
+
+            const result = await songServices.incrementStream(songId, userId);
+
+            if (!result) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Song not found",
+                });
+            }
+
+            res.status(200).json({
+                success: true,
+                message: "Stream counted successfully",
+                data: result,
+            });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({
+                success: false,
+                message: "Server error",
+            });
+        }
+    },
+
     async getLandingPageSong(req, res) {
         try {
             const data = await songServices.fetchLandingPageData();

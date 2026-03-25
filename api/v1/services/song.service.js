@@ -311,6 +311,24 @@ module.exports = {
         }
     },
 
+    async incrementStream(songId, userId) {
+        try {
+            const song = await db.songObj.findByPk(songId);
+            if (!song) return null;
+
+            // Create stream record for monthly tracking
+            await db.songStreamObj.create({ songId, userId });
+
+            // Increment the streamCount on the song
+            await db.songObj.increment("streamCount", { where: { id: songId } });
+
+            return { streamCount: song.streamCount + 1 };
+        } catch (e) {
+            logger.errorLog.log("error", commonHelper.customizeCatchMsg(e));
+            throw e;
+        }
+    },
+
     async fetchLandingPageData() {
         try {
             const featuredSongs = await db.songObj.findAll({
