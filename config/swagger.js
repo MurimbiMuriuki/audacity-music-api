@@ -83,6 +83,7 @@ const swaggerDocument = {
     { name: "Songs", description: "Song management" },
     { name: "Playlists", description: "Playlist management" },
     { name: "Playlist Songs", description: "Manage songs in playlists" },
+    { name: "Subscriptions", description: "Subscription & payment management" },
     { name: "Admin", description: "Admin dashboard endpoints" },
     { name: "Contact", description: "Contact form" },
     { name: "Public", description: "Public endpoints (no auth)" },
@@ -743,6 +744,105 @@ const swaggerDocument = {
         responses: {
           200: { description: "Song removed" },
           404: { description: "Song not found in playlist" },
+        },
+      },
+    },
+
+    // ─── SUBSCRIPTIONS ───
+    "/subscription/getPlans": {
+      get: {
+        tags: ["Subscriptions"],
+        summary: "Get available subscription plans",
+        security: [],
+        responses: {
+          200: { description: "Plans list with pricing" },
+        },
+      },
+    },
+    "/subscription/my": {
+      get: {
+        tags: ["Subscriptions"],
+        summary: "Get current user's subscription status",
+        description: "Returns the user's active subscription. Cancelled subscriptions remain active until billing_date.",
+        responses: {
+          200: {
+            description: "Subscription status",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    status: { type: "boolean" },
+                    message: { type: "string" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        hasActiveSubscription: { type: "boolean" },
+                        isCancelled: { type: "boolean" },
+                        expiresOn: { type: "string", format: "date", description: "Only present when cancelled" },
+                        subscription: { type: "object" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/subscription/verify": {
+      post: {
+        tags: ["Subscriptions"],
+        summary: "Verify Paystack payment and activate subscription",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["reference"],
+                properties: {
+                  reference: { type: "string", example: "pay_abc123", description: "Paystack payment reference" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Subscription activated" },
+          400: { description: "Payment failed or amount mismatch" },
+        },
+      },
+    },
+    "/subscription/cancel": {
+      post: {
+        tags: ["Subscriptions"],
+        summary: "Cancel subscription (stays active until billing date)",
+        description: "Cancels the user's active subscription on Paystack (stops auto-renewal) and locally. The plan remains usable until the billing_date (end of current billing cycle). For example, if billing cycle ends on the 15th and user cancels on the 10th, the plan stays active until the 15th.",
+        responses: {
+          200: {
+            description: "Subscription cancelled",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    status: { type: "boolean", example: true },
+                    message: { type: "string", example: "Subscription cancelled. Your plan remains active until 2026-04-15" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        subscription: { type: "object" },
+                        expiresOn: { type: "string", format: "date", example: "2026-04-15" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          404: { description: "No active subscription found" },
         },
       },
     },

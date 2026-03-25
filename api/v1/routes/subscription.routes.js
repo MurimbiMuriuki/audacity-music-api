@@ -16,6 +16,7 @@ router.get("/subscription/getPlans", subscriptionController.getPlans);
 // User — requires auth
 router.get("/subscription/my", [authJwt.verifyToken], subscriptionController.getMySubscription);
 router.post("/subscription/verify", [authJwt.verifyToken], subscriptionController.verifyPayment);
+router.post("/subscription/cancel", [authJwt.verifyToken], subscriptionController.cancelSubscription);
 
 // Paystack webhook — no auth (validated via signature)
 router.post("/subscription/webhook", subscriptionController.paystackWebhook);

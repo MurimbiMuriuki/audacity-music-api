@@ -33,6 +33,21 @@ module.exports = (sequelize, DataTypes) => {
       paystack_customer_code: {
         type: DataTypes.STRING,
         allowNull: true
+      },
+      paystack_subscription_code: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
+      },
+      paystack_email_token: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
+      },
+      cancelled_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
       }
     },
     {

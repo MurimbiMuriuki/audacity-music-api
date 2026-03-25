@@ -5,7 +5,7 @@ const paystackAPI = require('../../../config/paystack');
 const db = require("../models");
 
 // Helper: create subscription inside a transaction with idempotency
-async function activateSubscription(user_id, plan_name, reference) {
+async function activateSubscription(user_id, plan_name, reference, paystackSubscriptionCode, paystackEmailToken, paystackCustomerCode) {
   // Idempotency: check if this reference was already used
   const existing = await db.subscriptionObj.findOne({
     where: { paystack_reference: reference }
@@ -33,7 +33,10 @@ async function activateSubscription(user_id, plan_name, reference) {
       plan_name,
       billing_date: billingDate.toISOString().slice(0, 10),
       status: SUBSCRIPTION_STATUS.ACTIVE,
-      paystack_reference: reference
+      paystack_reference: reference,
+      paystack_subscription_code: paystackSubscriptionCode || null,
+      paystack_email_token: paystackEmailToken || null,
+      paystack_customer_code: paystackCustomerCode || null,
     }, { transaction: t });
   });
 
@@ -163,7 +166,7 @@ module.exports = {
       const user_id = req.userId;
       const subscription = await subscriptionServices.getLatestByUserId(user_id);
 
-      if (!subscription || subscription.status !== SUBSCRIPTION_STATUS.ACTIVE) {
+      if (!subscription) {
         return res.status(200).json({
           status: true,
           message: 'No active subscription',
@@ -171,10 +174,19 @@ module.exports = {
         });
       }
 
-      // Check if billing_date has passed
       const today = new Date().toISOString().slice(0, 10);
+
+      // If already expired status, no active subscription
+      if (subscription.status === SUBSCRIPTION_STATUS.EXPIRED) {
+        return res.status(200).json({
+          status: true,
+          message: 'No active subscription',
+          data: { hasActiveSubscription: false }
+        });
+      }
+
+      // Check if billing_date has passed — applies to both active and cancelled
       if (subscription.billing_date < today) {
-        // Auto-expire
         await db.subscriptionObj.update(
           { status: SUBSCRIPTION_STATUS.EXPIRED },
           { where: { id: subscription.id } }
@@ -186,14 +198,80 @@ module.exports = {
         });
       }
 
+      // Cancelled but billing_date not reached — still usable
+      if (subscription.status === SUBSCRIPTION_STATUS.CANCELLED) {
+        return res.status(200).json({
+          status: true,
+          message: 'Subscription cancelled but active until billing date',
+          data: {
+            hasActiveSubscription: true,
+            isCancelled: true,
+            expiresOn: subscription.billing_date,
+            subscription
+          }
+        });
+      }
+
       return res.status(200).json({
         status: true,
         message: 'Active subscription found',
-        data: { hasActiveSubscription: true, subscription }
+        data: { hasActiveSubscription: true, isCancelled: false, subscription }
       });
     } catch (error) {
       console.error(error);
       return res.status(500).json({ status: false, message: 'Server error', data: {} });
+    }
+  },
+
+  // POST /subscription/cancel — cancel subscription on Paystack + locally (stays active until billing_date)
+  async cancelSubscription(req, res) {
+    try {
+      const user_id = req.userId;
+
+      // Find the active subscription first (before cancelling locally)
+      const activeSub = await db.subscriptionObj.findOne({
+        where: { user_id, status: SUBSCRIPTION_STATUS.ACTIVE },
+        order: [["billing_date", "DESC"]],
+      });
+
+      if (!activeSub) {
+        return res.status(404).json({
+          status: false,
+          message: 'No active subscription found to cancel',
+        });
+      }
+
+      // Disable subscription on Paystack if we have the subscription code
+      if (activeSub.paystack_subscription_code) {
+        try {
+          await paystackAPI.post('/subscription/disable', {
+            code: activeSub.paystack_subscription_code,
+            token: activeSub.paystack_email_token,
+          });
+          console.log(`[Cancel] Disabled Paystack subscription: ${activeSub.paystack_subscription_code}`);
+        } catch (paystackErr) {
+          console.error('[Cancel] Paystack disable failed:', paystackErr.response?.data || paystackErr.message);
+          // If Paystack fails, we still want to cancel locally so user isn't stuck
+          // but warn in logs for manual follow-up
+        }
+      } else {
+        console.warn(`[Cancel] No paystack_subscription_code for subscription ${activeSub.id}, skipping Paystack disable`);
+      }
+
+      // Cancel locally — mark as cancelled, plan stays active until billing_date
+      const subscription = await subscriptionServices.cancelSubscription(user_id);
+
+      return res.status(200).json({
+        status: true,
+        message: `Subscription cancelled. Your plan remains active until ${subscription.billing_date}`,
+        data: {
+          subscription,
+          expiresOn: subscription.billing_date,
+        }
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ status: false, message: 'Server error' });
     }
   },
 
@@ -250,7 +328,27 @@ module.exports = {
         });
       }
 
-      const result = await activateSubscription(user_id, plan_name, reference);
+      // Fetch Paystack subscription code using customer code from transaction
+      let paystackSubCode = null;
+      let paystackEmailToken = null;
+      const customerCode = data.customer?.customer_code;
+
+      if (customerCode) {
+        try {
+          const subListRes = await paystackAPI.get(`/subscription?customer=${data.customer.id}`);
+          const subscriptions = subListRes.data?.data;
+          if (subscriptions && subscriptions.length > 0) {
+            // Get the most recent active subscription
+            const latestSub = subscriptions[0];
+            paystackSubCode = latestSub.subscription_code || null;
+            paystackEmailToken = latestSub.email_token || null;
+          }
+        } catch (subErr) {
+          console.error('[Verify] Could not fetch Paystack subscription details:', subErr.message);
+        }
+      }
+
+      const result = await activateSubscription(user_id, plan_name, reference, paystackSubCode, paystackEmailToken, customerCode);
 
       if (result.alreadyProcessed) {
         return res.status(200).json({
@@ -304,8 +402,8 @@ module.exports = {
       const { event, data } = req.body;
 
       if (event === 'charge.success') {
-        const { reference, metadata, amount } = data;
-        const { user_id, plan_name } = metadata || {};
+        const { reference, metadata, amount, customer } = data;
+        const { user_id, plan_name, subscription_code, email_token } = metadata || {};
 
         if (!user_id || !plan_name) return;
 
@@ -313,8 +411,41 @@ module.exports = {
         const plan = PLAN_PRICES[plan_name];
         if (!plan || amount < plan.amount) return;
 
-        await activateSubscription(user_id, plan_name, reference);
+        await activateSubscription(user_id, plan_name, reference, subscription_code, email_token, customer?.customer_code);
         console.log(`[Webhook] Subscription activated for user ${user_id}, plan: ${plan_name}`);
+      }
+
+      // Handle subscription.create — store subscription code for future cancellation
+      if (event === 'subscription.create') {
+        const { subscription_code, email_token, customer } = data;
+        const customerCode = customer?.customer_code;
+
+        if (subscription_code && customerCode) {
+          // Find the latest active subscription for this customer and update with Paystack codes
+          const sub = await db.subscriptionObj.findOne({
+            where: { paystack_customer_code: customerCode, status: SUBSCRIPTION_STATUS.ACTIVE },
+            order: [['id', 'DESC']],
+          });
+          if (sub) {
+            await db.subscriptionObj.update(
+              { paystack_subscription_code: subscription_code, paystack_email_token: email_token },
+              { where: { id: sub.id } }
+            );
+            console.log(`[Webhook] Stored subscription_code ${subscription_code} for sub ${sub.id}`);
+          }
+        }
+      }
+
+      // Handle subscription.disable — Paystack confirms cancellation
+      if (event === 'subscription.not_renew') {
+        const { subscription_code } = data;
+        if (subscription_code) {
+          await db.subscriptionObj.update(
+            { status: SUBSCRIPTION_STATUS.CANCELLED, cancelled_at: new Date() },
+            { where: { paystack_subscription_code: subscription_code, status: SUBSCRIPTION_STATUS.ACTIVE } }
+          );
+          console.log(`[Webhook] Subscription ${subscription_code} marked as cancelled`);
+        }
       }
     } catch (err) {
       console.error('Webhook error:', err.message);

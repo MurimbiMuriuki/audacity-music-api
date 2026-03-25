@@ -72,6 +72,27 @@ module.exports = {
       throw e;
     }
   },
+  /*cancelSubscription — mark as cancelled but keep active until billing_date*/
+  async cancelSubscription(userId) {
+    try {
+      const subscription = await db.subscriptionObj.findOne({
+        where: { user_id: userId, status: 'active' },
+        order: [["billing_date", "DESC"]],
+      });
+
+      if (!subscription) return null;
+
+      await db.subscriptionObj.update(
+        { status: 'cancelled', cancelled_at: new Date() },
+        { where: { id: subscription.id } }
+      );
+
+      return await db.subscriptionObj.findByPk(subscription.id, { raw: true });
+    } catch (e) {
+      logger.errorLog.log("error", commonHelper.customizeCatchMsg(e));
+      throw e;
+    }
+  },
   /*updateSubscription*/
   async updateSubscription(id, updateData) {
     try {
