@@ -94,6 +94,10 @@ module.exports = {
     },
     async deleteSong(id) {
         try {
+            await db.playlistSongObj.destroy({
+                where: { songId: id }
+            });
+
             const deletedRow = await db.songObj.destroy({
                 where: { id: id }
             });
