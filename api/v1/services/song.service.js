@@ -21,7 +21,7 @@ module.exports = {
         }
     },
 
-    async getAllUploadSong(search, page = 1, limit = 10, shuffle = false, seed = null) {
+    async getAllUploadSong(search, page = 1, limit = 10) {
         try {
             let condition = {};
             const offset = (page - 1) * limit;
@@ -48,14 +48,10 @@ module.exports = {
                 };
             }
 
-            const orderClause = shuffle && seed != null
-                ? [db.Sequelize.literal(`RAND(${parseInt(seed, 10)})`)]
-                : [["createdAt", "DESC"]];
-
             const { count, rows } = await db.songObj.findAndCountAll({
                 where: condition,
                 include: [userInclude],
-                order: orderClause,
+                order: [["createdAt", "DESC"]],
                 limit,
                 offset,
                 subQuery: false,
@@ -327,6 +323,26 @@ module.exports = {
             await db.songObj.increment("streamCount", { where: { id: songId } });
 
             return { streamCount: song.streamCount + 1 };
+        } catch (e) {
+            logger.errorLog.log("error", commonHelper.customizeCatchMsg(e));
+            throw e;
+        }
+    },
+
+    async getHomeFeed(limit = 100) {
+        try {
+            const songs = await db.songObj.findAll({
+                attributes: ["id", "title", "coverUrl", "audioUrl", "duration", "streamCount"],
+                include: [userInclude],
+                order: [["createdAt", "DESC"]],
+                limit,
+            });
+
+            return songs.map(song => {
+                const plain = song.toJSON();
+                plain.artistName = plain.user?.artistName || plain.user?.name || null;
+                return plain;
+            });
         } catch (e) {
             logger.errorLog.log("error", commonHelper.customizeCatchMsg(e));
             throw e;

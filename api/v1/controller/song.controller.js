@@ -60,13 +60,11 @@ module.exports = {
     },
     async getAllUploadSong(req, res) {
         try {
-            const { search, shuffle, seed } = req.query;
+            const { search } = req.query;
             const page = parseInt(req.query.page) || 1;
             const limit = parseInt(req.query.limit) || 10;
-            const isShuffle = shuffle === 'true';
-            const seedNum = seed ? parseInt(seed, 10) : null;
 
-            const result = await songServices.getAllUploadSong(search, page, limit, isShuffle, seedNum);
+            const result = await songServices.getAllUploadSong(search, page, limit);
 
             res.status(200).json({
                 success: true,
@@ -319,6 +317,30 @@ module.exports = {
                 success: true,
                 message: "Stream counted successfully",
                 data: result,
+            });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({
+                success: false,
+                message: "Server error",
+            });
+        }
+    },
+
+    async getHomeFeed(req, res) {
+        try {
+            const limit = parseInt(req.query.limit) || 100;
+            const cap = Math.min(limit, 200);
+
+            const songs = await songServices.getHomeFeed(cap);
+
+            res.status(200).json({
+                success: true,
+                message: "Home feed fetched successfully",
+                data: {
+                    total: songs.length,
+                    songs,
+                },
             });
         } catch (error) {
             console.error(error);

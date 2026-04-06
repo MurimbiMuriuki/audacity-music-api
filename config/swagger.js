@@ -393,6 +393,7 @@ const swaggerDocument = {
       get: {
         tags: ["Songs"],
         summary: "Get all songs (paginated, searchable)",
+        description: "Returns songs with pagination. Shuffle is handled client-side — the mobile app should fetch all song metadata and shuffle locally for better UX and performance.",
         parameters: [
           { name: "search", in: "query", schema: { type: "string" } },
           {
@@ -551,6 +552,68 @@ const swaggerDocument = {
                       properties: {
                         songs: { type: "array", items: { $ref: "#/components/schemas/Song" } },
                         artists: { type: "array", items: { type: "object" } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+
+    "/song/homeFeed": {
+      get: {
+        tags: ["Songs"],
+        summary: "Get home feed songs for playback queue",
+        description: "Returns up to 200 songs with lightweight metadata (id, title, coverUrl, audioUrl, duration, artist info). The client should shuffle this array locally for shuffle mode — no server-side shuffle needed.",
+        parameters: [
+          {
+            name: "limit",
+            in: "query",
+            schema: { type: "integer", default: 100, maximum: 200 },
+            description: "Number of songs to return (max 200)",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Home feed songs",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    message: { type: "string" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        total: { type: "integer", example: 100 },
+                        songs: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              id: { type: "integer" },
+                              title: { type: "string" },
+                              coverUrl: { type: "string", nullable: true },
+                              audioUrl: { type: "string" },
+                              duration: { type: "number", nullable: true },
+                              streamCount: { type: "integer" },
+                              artistName: { type: "string" },
+                              user: {
+                                type: "object",
+                                properties: {
+                                  id: { type: "integer" },
+                                  name: { type: "string" },
+                                  artistName: { type: "string" },
+                                  profileImage: { type: "string", nullable: true },
+                                },
+                              },
+                            },
+                          },
+                        },
                       },
                     },
                   },
@@ -744,6 +807,7 @@ const swaggerDocument = {
       get: {
         tags: ["Playlist Songs"],
         summary: "Get all songs in a playlist",
+        description: "Returns all songs metadata (id, title, coverUrl, audioUrl, duration, artist info) for a playlist. The client should use this data to build a local queue and handle shuffle/unshuffle locally — no server-side shuffle needed.",
         parameters: [
           {
             name: "playlistId",
