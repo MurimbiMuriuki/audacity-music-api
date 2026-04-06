@@ -59,6 +59,40 @@ module.exports = {
             });
         }
     },
+    async deletePlaylist(req, res) {
+        try {
+            const { playlistId } = req.query;
+            const userId = req.userId;
+
+            if (!playlistId) {
+                return res.status(400).json({
+                    success: false,
+                    message: "playlistId is required",
+                });
+            }
+
+            const deleted = await playListService.deletePlaylist(playlistId, userId);
+
+            if (!deleted) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Playlist not found",
+                });
+            }
+
+            res.status(200).json({
+                success: true,
+                message: "Playlist deleted successfully",
+            });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({
+                success: false,
+                message: "Server error",
+            });
+        }
+    },
+
     async sharePlaylist(req, res) {
         try {
             const { playlistId } = req.query;

@@ -679,6 +679,41 @@ const swaggerDocument = {
       },
     },
 
+    "/playList/deletePlaylist": {
+      delete: {
+        tags: ["Playlists"],
+        summary: "Delete a playlist",
+        description: "Deletes a playlist and all its associated songs. Only the owner can delete their playlist.",
+        parameters: [
+          {
+            name: "playlistId",
+            in: "query",
+            required: true,
+            schema: { type: "integer" },
+            description: "ID of the playlist to delete",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Playlist deleted successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    message: { type: "string", example: "Playlist deleted successfully" },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: "playlistId is required" },
+          404: { description: "Playlist not found" },
+        },
+      },
+    },
+
     // ─── PLAYLIST SONGS ───
     "/playListSong/addPlaylistSong": {
       post: {

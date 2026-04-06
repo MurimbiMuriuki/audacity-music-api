@@ -13,6 +13,22 @@ module.exports = {
         }
     },
 
+    async deletePlaylist(playlistId, userId) {
+        try {
+            // Delete associated playlist songs first
+            await db.playlistSongObj.destroy({ where: { playlistId } });
+
+            // Delete the playlist (only if owned by the user)
+            const deleted = await db.playlistObj.destroy({
+                where: { id: playlistId, userId },
+            });
+            return deleted;
+        } catch (error) {
+            logger.errorLog.log("error", commonHelper.customizeCatchMsg(error));
+            throw error;
+        }
+    },
+
     async getAllPlayList(userId) {
         try {
             const playlists = await db.playlistObj.findAll({
