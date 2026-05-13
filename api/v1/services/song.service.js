@@ -59,6 +59,7 @@ module.exports = {
 
             const songs = rows.map(song => {
                 const plain = song.toJSON();
+                plain.artistName_new = plain.artistName || null;
                 plain.artistName = plain.user?.artistName || plain.user?.name || null;
                 return plain;
             });
@@ -78,6 +79,7 @@ module.exports = {
 
             if (song) {
                 const plain = song.toJSON();
+                plain.artistName_new = plain.artistName || null;
                 plain.artistName = plain.user?.artistName || plain.user?.name || null;
                 return plain;
             }
@@ -142,6 +144,7 @@ module.exports = {
 
             const songs = rows.map(song => {
                 const plain = song.toJSON();
+                plain.artistName_new = plain.artistName || null;
                 plain.artistName = plain.user?.artistName || plain.user?.name || null;
                 return plain;
             });
@@ -182,6 +185,7 @@ module.exports = {
 
             const songs = rows.map(song => {
                 const plain = song.toJSON();
+                plain.artistName_new = plain.artistName || null;
                 plain.artistName = plain.user?.artistName || plain.user?.name || null;
                 return plain;
             });
@@ -258,6 +262,7 @@ module.exports = {
 
             const formattedSongs = songs.map(song => {
                 const plain = song.toJSON();
+                plain.artistName_new = plain.artistName || null;
                 plain.artistName = plain.user?.artistName || plain.user?.name || null;
                 return plain;
             });
@@ -340,6 +345,7 @@ module.exports = {
 
             return songs.map(song => {
                 const plain = song.toJSON();
+                plain.artistName_new = plain.artistName || null;
                 plain.artistName = plain.user?.artistName || plain.user?.name || null;
                 return plain;
             });
@@ -360,6 +366,7 @@ module.exports = {
 
             return featuredSongs.map(song => {
                 const plain = song.toJSON();
+                plain.artistName_new = plain.artistName || null;
                 plain.artistName = plain.user?.artistName || plain.user?.name || null;
                 return plain;
             });

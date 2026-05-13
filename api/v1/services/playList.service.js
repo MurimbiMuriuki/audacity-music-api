@@ -29,10 +29,9 @@ module.exports = {
         }
     },
 
-    async getAllPlayList(userId) {
+    async getAllPlayList() {
         try {
             const playlists = await db.playlistObj.findAll({
-                where: { userId },
                 include: [
                     {
                         model: db.playlistSongObj,

@@ -41,9 +41,7 @@ module.exports = {
 
     async getAllPlayList(req, res) {
         try {
-            const userId = req.userId;
-
-            const data = await playListService.getAllPlayList(userId);
+            const data = await playListService.getAllPlayList();
 
             res.status(200).json({
                 success: true,
