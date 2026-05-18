@@ -337,7 +337,7 @@ module.exports = {
     async getHomeFeed(limit = 100) {
         try {
             const songs = await db.songObj.findAll({
-                attributes: ["id", "title", "coverUrl", "audioUrl", "duration", "streamCount"],
+                attributes: ["id", "title", "coverUrl", "audioUrl", "duration", "streamCount", "artistName"],
                 include: [userInclude],
                 order: [["createdAt", "DESC"]],
                 limit,
