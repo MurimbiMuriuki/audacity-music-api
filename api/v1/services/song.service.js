@@ -245,55 +245,44 @@ module.exports = {
 
     async searchSongsAndArtists(query, limit = 10) {
         try {
-            // Search songs by title, include user for artistName
             const songs = await db.songObj.findAll({
                 where: {
                     [db.Op.or]: [
                         { title: { [db.Op.like]: `%${query}%` } },
-                        { "$user.artistName$": { [db.Op.like]: `%${query}%` } },
-                        { "$user.name$": { [db.Op.like]: `%${query}%` } },
+                        { artistName: { [db.Op.like]: `%${query}%` } },
                     ],
                 },
                 include: [userInclude],
                 order: [["createdAt", "DESC"]],
                 limit,
-                subQuery: false,
             });
 
             const formattedSongs = songs.map(song => {
                 const plain = song.toJSON();
-                plain.artistName_new = plain.artistName || null;
-                plain.artistName = plain.user?.artistName || plain.user?.name || null;
                 return plain;
             });
 
-            // Search artists (users who have songs matching query)
-            const artists = await db.usersObj.findAll({
+            // Search artists by artistName on songs table
+            const artistRows = await db.songObj.findAll({
                 attributes: [
-                    "id", "name", "artistName", "profileImage",
-                    [db.Sequelize.fn("COUNT", db.Sequelize.col("songs.id")), "songCount"],
+                    "artistName",
+                    [db.Sequelize.fn("COUNT", db.Sequelize.col("Song.id")), "songCount"],
                 ],
-                include: [{
-                    model: db.songObj,
-                    as: "songs",
-                    attributes: [],
-                    required: true,
-                }],
                 where: {
-                    [db.Op.or]: [
-                        { name: { [db.Op.like]: `%${query}%` } },
-                        { artistName: { [db.Op.like]: `%${query}%` } },
-                    ],
+                    artistName: { [db.Op.like]: `%${query}%` },
                 },
-                group: ["users.id"],
+                include: [userInclude],
+                group: ["artistName"],
                 limit,
-                subQuery: false,
             });
 
-            const formattedArtists = artists.map(a => {
-                const plain = a.toJSON();
-                plain.artistName = plain.artistName || plain.name;
-                return plain;
+            const formattedArtists = artistRows.map(row => {
+                const plain = row.toJSON();
+                return {
+                    artistName: plain.artistName,
+                    songCount: plain.songCount,
+                    profileImage: plain.user?.profileImage || null,
+                };
             });
 
             return { songs: formattedSongs, artists: formattedArtists };
