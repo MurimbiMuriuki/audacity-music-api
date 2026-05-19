@@ -36,7 +36,7 @@ module.exports = {
                 name = null,
             } = filters;
     
-            const whereClause = { [Op.and]: [] };
+            const whereClause = { [Op.and]: [{ role: { [Op.ne]: 'Admin' } }] };
     
             if (email) {
                 whereClause[Op.and].push(
