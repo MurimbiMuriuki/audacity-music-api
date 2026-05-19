@@ -1,4 +1,3 @@
-const path = require("path");
 const songServices = require("../services/song.service");
 const { getAudioDuration } = require("../helper/audio.helper");
 
@@ -17,18 +16,17 @@ module.exports = {
                 });
             }
 
-            const coverFile = req.files.cover ? req.files.cover[0].filename : null;
-            const audioFile = req.files.audio[0].filename;
+            const coverUrl = req.files.cover ? req.files.cover[0].path : null;
+            const audioUrl = req.files.audio[0].path;
 
-            const audioPath = path.join(__dirname, "../../../uploads/audios", audioFile);
-            const duration = await getAudioDuration(audioPath);
+            const duration = await getAudioDuration(audioUrl);
 
             const data = {
                 userId,
                 title,
                 artistName,
-                coverUrl: coverFile ? `/uploads/covers/${coverFile}` : null,
-                audioUrl: `/uploads/audios/${audioFile}`,
+                coverUrl,
+                audioUrl,
                 duration,
             };
 
@@ -53,10 +51,10 @@ module.exports = {
                     message: `Upload folder does not exist: ${error.path}`,
                 });
             }
-            console.error(error);
+            console.error("uploadSong error:", error?.message || error);
             res.status(500).json({
                 success: false,
-                message: "Server error",
+                message: error?.message || "Server error",
             });
         }
     },
@@ -146,19 +144,13 @@ module.exports = {
                 artistName
             };
 
-            // If new cover uploaded
             if (req.files && req.files.cover) {
-                const coverFile = req.files.cover[0].filename;
-                updateData.coverUrl = `/uploads/covers/${coverFile}`;
+                updateData.coverUrl = req.files.cover[0].path;
             }
 
-            // If new audio uploaded
             if (req.files && req.files.audio) {
-                const audioFile = req.files.audio[0].filename;
-                updateData.audioUrl = `/uploads/audios/${audioFile}`;
-
-                const audioPath = path.join(__dirname, "../../../uploads/audios", audioFile);
-                const duration = await getAudioDuration(audioPath);
+                updateData.audioUrl = req.files.audio[0].path;
+                const duration = await getAudioDuration(updateData.audioUrl);
                 if (duration !== null) {
                     updateData.duration = duration;
                 }

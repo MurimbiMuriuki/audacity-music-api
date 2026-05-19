@@ -1,29 +1,32 @@
 const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("./cloudinary");
 
-['uploads/covers', 'uploads/audios', 'uploads/playlists'].forEach(dir => {
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-        console.log(`✅ Created: ${dir}`);
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: (req, file) => {
+    if (file.fieldname === "audio") {
+      return {
+        folder: "audacity-music/audios",
+        resource_type: "video",
+        allowed_formats: ["mp3", "wav", "aac", "ogg", "m4a", "flac"],
+      };
     }
-});
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
     if (file.fieldname === "cover") {
-      cb(null, "uploads/covers/");
-    } else if (file.fieldname === "audio") {
-      cb(null, "uploads/audios/");
-    } else if (file.fieldname === "playlistCover") {
-      cb(null, "uploads/playlists/");
+      return {
+        folder: "audacity-music/covers",
+        resource_type: "image",
+        allowed_formats: ["jpg", "jpeg", "png", "webp"],
+      };
     }
-  },
-
-  filename: function (req, file, cb) {
-    const uniqueName =
-      Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueName + path.extname(file.originalname));
+    if (file.fieldname === "playlistCover") {
+      return {
+        folder: "audacity-music/playlists",
+        resource_type: "image",
+        allowed_formats: ["jpg", "jpeg", "png", "webp"],
+      };
+    }
+    return { folder: "audacity-music/misc" };
   },
 });
 

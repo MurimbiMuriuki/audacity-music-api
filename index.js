@@ -44,6 +44,14 @@ setupSwagger(app);
 
 app.use("/api", require("./api"));
 
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err.message || err);
+  res.status(err.http_code || 500).json({
+    success: false,
+    message: err.message || "Internal server error",
+  });
+});
+
 app.use((req, res) => {
   res.status(404).send('404');
 });

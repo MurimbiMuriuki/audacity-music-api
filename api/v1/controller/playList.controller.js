@@ -15,7 +15,7 @@ module.exports = {
                 });
             }
 
-            const coverFile = req.file ? `/uploads/playlists/${req.file.filename}` : null;
+            const coverFile = req.file ? req.file.path : null;
 
             const playlistData = {
                 userId,
