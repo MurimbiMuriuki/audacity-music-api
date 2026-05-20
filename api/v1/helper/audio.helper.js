@@ -5,6 +5,8 @@ const path = require("path");
  * Get audio file duration in seconds using ffprobe.
  * Returns null if duration cannot be determined.
  */
+const ffprobePath = process.env.FFPROBE_PATH || "ffprobe";
+
 function getAudioDuration(filePath) {
   return new Promise((resolve) => {
     const args = [
@@ -14,9 +16,10 @@ function getAudioDuration(filePath) {
       filePath,
     ];
 
-    execFile("ffprobe", args, (error, stdout) => {
+    execFile(ffprobePath, args, (error, stdout, stderr) => {
       if (error) {
         console.error("ffprobe error:", error.message);
+        console.error("stderr:", stderr);
         return resolve(null);
       }
       const duration = parseFloat(stdout.trim());
