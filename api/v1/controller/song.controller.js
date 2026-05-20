@@ -1,5 +1,6 @@
 const songServices = require("../services/song.service");
-const { getAudioDuration } = require("../helper/audio.helper");
+const { getAudioDurationFromBuffer } = require("../helper/audio.helper");
+const { uploadToCloudinary } = require("../helper/cloudinary.helper");
 
 
 module.exports = {
@@ -16,10 +17,13 @@ module.exports = {
                 });
             }
 
-            const coverUrl = req.files.cover ? req.files.cover[0].path : null;
-            const audioUrl = req.files.audio[0].path;
+            const audioFile = req.files.audio[0];
+            const duration = await getAudioDurationFromBuffer(audioFile.buffer);
 
-            const duration = await getAudioDuration(audioUrl);
+            const [audioUrl, coverUrl] = await Promise.all([
+                uploadToCloudinary(audioFile),
+                req.files.cover ? uploadToCloudinary(req.files.cover[0]) : Promise.resolve(null),
+            ]);
 
             const data = {
                 userId,
@@ -31,7 +35,6 @@ module.exports = {
             };
 
             const song = await songServices.createSong(data);
-
             const totalUploads = await songServices.getUserSongCount(userId);
 
             res.status(201).json({
@@ -45,12 +48,6 @@ module.exports = {
                 }
             });
         } catch (error) {
-            if (error.code === 'ENOENT') {
-                return res.status(500).json({
-                    success: false,
-                    message: `Upload folder does not exist: ${error.path}`,
-                });
-            }
             console.error("uploadSong error:", error?.message || error);
             res.status(500).json({
                 success: false,
@@ -144,17 +141,26 @@ module.exports = {
                 artistName
             };
 
+            const uploads = [];
+
             if (req.files && req.files.cover) {
-                updateData.coverUrl = req.files.cover[0].path;
+                uploads.push(
+                    uploadToCloudinary(req.files.cover[0]).then(url => { updateData.coverUrl = url; })
+                );
             }
 
             if (req.files && req.files.audio) {
-                updateData.audioUrl = req.files.audio[0].path;
-                const duration = await getAudioDuration(updateData.audioUrl);
+                const audioFile = req.files.audio[0];
+                const duration = await getAudioDurationFromBuffer(audioFile.buffer);
                 if (duration !== null) {
                     updateData.duration = duration;
                 }
+                uploads.push(
+                    uploadToCloudinary(audioFile).then(url => { updateData.audioUrl = url; })
+                );
             }
+
+            await Promise.all(uploads);
 
             const updated = await songServices.updateSong(id, updateData);
 
@@ -364,5 +370,3 @@ module.exports = {
         }
     }
 }
-
-
