@@ -51,4 +51,4 @@ function getAudioDuration(filePath) {
   });
 }
 
-module.exports = getAudioDuration;
+module.exports = {getAudioDuration};
