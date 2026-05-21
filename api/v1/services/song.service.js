@@ -122,41 +122,26 @@ module.exports = {
         try {
             const offset = (page - 1) * limit;
 
-            // Find users matching the artistName
-            const user = await db.usersObj.findOne({
-                where: {
-                    [db.Op.or]: [
-                        { artistName: artistName },
-                        { name: artistName },
-                    ]
-                }
-            });
-
-            if (!user) return null;
-
             const { count, rows } = await db.songObj.findAndCountAll({
-                where: { userId: user.id },
+                where: { artistName: { [db.Op.like]: `%${artistName}%` } },
                 include: [userInclude],
                 order: [["createdAt", "DESC"]],
                 limit,
-                offset
+                offset,
             });
 
-            const songs = rows.map(song => {
-                const plain = song.toJSON();
-                plain.artistName_new = plain.artistName || null;
-                plain.artistName = plain.user?.artistName || plain.user?.name || null;
-                return plain;
-            });
+            if (count === 0) return null;
+
+            const songs = rows.map(song => song.toJSON());
+            const firstUser = songs[0]?.user;
 
             return {
-                artistId: user.id,
-                artistName: user.artistName || user.name,
-                profileImage: user.profileImage,
+                artistName,
+                profileImage: firstUser?.profileImage || null,
                 songCount: count,
                 page,
                 totalPages: Math.ceil(count / limit),
-                songs
+                songs,
             };
 
         } catch (e) {
