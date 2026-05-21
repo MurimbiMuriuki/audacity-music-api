@@ -29,21 +29,8 @@ module.exports = {
             if (search) {
                 condition = {
                     [db.Op.or]: [
-                        {
-                            title: {
-                                [db.Op.like]: `%${search}%`
-                            }
-                        },
-                        {
-                            "$user.artistName$": {
-                                [db.Op.like]: `%${search}%`
-                            }
-                        },
-                        {
-                            "$user.name$": {
-                                [db.Op.like]: `%${search}%`
-                            }
-                        }
+                        { title: { [db.Op.like]: `%${search}%` } },
+                        { artistName: { [db.Op.like]: `%${search}%` } },
                     ]
                 };
             }
