@@ -152,6 +152,50 @@ module.exports = {
             throw e;
         }
     },
+    /*findOrCreateAppleUser*/
+    async findOrCreateAppleUser({ email, name, appleId }) {
+        try {
+            // First try to find by Apple provider_id (handles private relay email changes)
+            let user = await db.usersObj.findOne({
+                where: { provider: 'apple', provider_id: appleId },
+            });
+
+            if (user) return user;
+
+            // Then try by email
+            user = await db.usersObj.findOne({
+                where: { email },
+            });
+
+            if (user) {
+                if (!user.provider || !user.provider_id) {
+                    await db.usersObj.update(
+                        { provider: 'apple', provider_id: appleId },
+                        { where: { id: user.id } }
+                    );
+                    user = await db.usersObj.findOne({ where: { id: user.id } });
+                }
+                return user;
+            }
+
+            user = await db.usersObj.create({
+                name,
+                email,
+                phone: '',
+                password: '',
+                provider: 'apple',
+                provider_id: appleId,
+                role: 'user',
+                status: 0,
+            });
+
+            return user;
+        } catch (e) {
+            logger.errorLog.log("error", commonHelper.customizeCatchMsg(e));
+            throw e;
+        }
+    },
+
      /*deleteUser*/
      async deleteUser(userId) {
         try {

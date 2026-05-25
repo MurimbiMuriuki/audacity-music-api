@@ -17,6 +17,8 @@ router.delete("/auth/deleteUser/:id", [authJwt.verifyToken],authController.delet
 router.post("/auth/login", authController.login);
 /*googleLogin*/
 router.post("/auth/google", authController.googleLogin);
+/*appleLogin*/
+router.post("/auth/apple", authController.appleLogin);
 
 
 module.exports = router;
