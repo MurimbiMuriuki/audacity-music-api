@@ -45,6 +45,13 @@ module.exports = {
         }
     },
 
+    async isPlaylistOwner(playlistId, userId) {
+        const playlist = await db.playlistObj.findOne({
+            where: { id: playlistId, userId },
+        });
+        return !!playlist;
+    },
+
     async removeSong(playlistId, songId) {
         try {
             const deleted = await db.playlistSongObj.destroy({

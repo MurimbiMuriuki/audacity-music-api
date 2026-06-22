@@ -1,6 +1,6 @@
 const songServices = require("../services/song.service");
 const { getAudioDurationFromBuffer } = require("../helper/audio.helper");
-const { uploadToCloudinary } = require("../helper/cloudinary.helper");
+const { uploadToSupabase } = require("../helper/supabase.helper");
 
 
 module.exports = {
@@ -21,8 +21,8 @@ module.exports = {
             const duration = await getAudioDurationFromBuffer(audioFile.buffer);
 
             const [audioUrl, coverUrl] = await Promise.all([
-                uploadToCloudinary(audioFile),
-                req.files.cover ? uploadToCloudinary(req.files.cover[0]) : Promise.resolve(null),
+                uploadToSupabase(audioFile),
+                req.files.cover ? uploadToSupabase(req.files.cover[0]) : Promise.resolve(null),
             ]);
 
             const data = {
@@ -145,7 +145,7 @@ module.exports = {
 
             if (req.files && req.files.cover) {
                 uploads.push(
-                    uploadToCloudinary(req.files.cover[0]).then(url => { updateData.coverUrl = url; })
+                    uploadToSupabase(req.files.cover[0]).then(url => { updateData.coverUrl = url; })
                 );
             }
 
@@ -156,7 +156,7 @@ module.exports = {
                     updateData.duration = duration;
                 }
                 uploads.push(
-                    uploadToCloudinary(audioFile).then(url => { updateData.audioUrl = url; })
+                    uploadToSupabase(audioFile).then(url => { updateData.audioUrl = url; })
                 );
             }
 

@@ -1,5 +1,5 @@
 const playListService = require("../services/playList.service");
-const { uploadToCloudinary } = require("../helper/cloudinary.helper");
+const { uploadToSupabase } = require("../helper/supabase.helper");
 
 
 module.exports = {
@@ -16,7 +16,7 @@ module.exports = {
                 });
             }
 
-            const coverFile = req.file ? await uploadToCloudinary(req.file) : null;
+            const coverFile = req.file ? await uploadToSupabase(req.file) : null;
 
             const playlistData = {
                 userId,

@@ -37,8 +37,19 @@ const generateAccessToken = (user) => {
   });
 };
 
+const isAdmin = (req, res, next) => {
+  if (req.role !== "Admin") {
+    return res.status(403).json({
+      success: false,
+      message: "Access denied. Admin only.",
+    });
+  }
+  next();
+};
+
 const authJwt = {
   verifyToken,
+  isAdmin,
   generateAccessToken
 };
 

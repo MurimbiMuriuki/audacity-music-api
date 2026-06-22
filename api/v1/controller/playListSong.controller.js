@@ -9,11 +9,20 @@ module.exports = {
     async addPlaylistSong(req, res) {
         try {
             const { playlistId, songId } = req.body;
+            const userId = req.userId;
 
             if (!playlistId || !songId) {
                 return res.status(400).json({
                     success: false,
                     message: "playlistId and songId are required",
+                });
+            }
+
+            const isOwner = await playListSongService.isPlaylistOwner(playlistId, userId);
+            if (!isOwner) {
+                return res.status(403).json({
+                    success: false,
+                    message: "You can only add songs to your own playlists",
                 });
             }
 
@@ -66,11 +75,20 @@ module.exports = {
     async removeSong(req, res) {
         try {
             const { playlistId, songId } = req.query;
+            const userId = req.userId;
 
             if (!playlistId || !songId) {
                 return res.status(400).json({
                     success: false,
                     message: "playlistId and songId are required",
+                });
+            }
+
+            const isOwner = await playListSongService.isPlaylistOwner(playlistId, userId);
+            if (!isOwner) {
+                return res.status(403).json({
+                    success: false,
+                    message: "You can only remove songs from your own playlists",
                 });
             }
 
