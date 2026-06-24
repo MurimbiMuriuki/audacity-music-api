@@ -161,7 +161,7 @@ module.exports = {
             // Get all users who have songs
             const artists = await db.usersObj.findAll({
                 attributes: [
-                    "id", "name", "artistName",
+                    "id", "name", "artistName", "paypalEmail",
                     [fn("SUM", col("songs.streamCount")), "totalStreams"]
                 ],
                 include: [{
