@@ -30,11 +30,6 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
     },
 
-    artistName: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-
     streamCount: {
       type: DataTypes.INTEGER,
       defaultValue: 0,

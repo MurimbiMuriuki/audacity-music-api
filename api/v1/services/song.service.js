@@ -30,7 +30,8 @@ module.exports = {
                 condition = {
                     [db.Op.or]: [
                         { title: { [db.Op.like]: `%${search}%` } },
-                        { artistName: { [db.Op.like]: `%${search}%` } },
+                        { "$user.artistName$": { [db.Op.like]: `%${search}%` } },
+                        { "$user.name$": { [db.Op.like]: `%${search}%` } },
                     ]
                 };
             }
@@ -46,7 +47,6 @@ module.exports = {
 
             const songs = rows.map(song => {
                 const plain = song.toJSON();
-                plain.artistName_new = plain.artistName || null;
                 plain.artistName = plain.user?.artistName || plain.user?.name || null;
                 return plain;
             });
@@ -66,7 +66,6 @@ module.exports = {
 
             if (song) {
                 const plain = song.toJSON();
-                plain.artistName_new = plain.artistName || null;
                 plain.artistName = plain.user?.artistName || plain.user?.name || null;
                 return plain;
             }
@@ -110,8 +109,15 @@ module.exports = {
             const offset = (page - 1) * limit;
 
             const { count, rows } = await db.songObj.findAndCountAll({
-                where: { artistName: { [db.Op.like]: `%${artistName}%` } },
-                include: [userInclude],
+                include: [{
+                    ...userInclude,
+                    where: {
+                        [db.Op.or]: [
+                            { artistName: { [db.Op.like]: `%${artistName}%` } },
+                            { name: { [db.Op.like]: `%${artistName}%` } },
+                        ]
+                    },
+                }],
                 order: [["createdAt", "DESC"]],
                 limit,
                 offset,
@@ -119,11 +125,15 @@ module.exports = {
 
             if (count === 0) return null;
 
-            const songs = rows.map(song => song.toJSON());
-            const firstUser = songs[0]?.user;
+            const songs = rows.map(song => {
+                const plain = song.toJSON();
+                plain.artistName = plain.user?.artistName || plain.user?.name || null;
+                return plain;
+            });
+            const firstUser = rows[0]?.user;
 
             return {
-                artistName,
+                artistName: firstUser?.artistName || firstUser?.name || artistName,
                 profileImage: firstUser?.profileImage || null,
                 songCount: count,
                 page,
@@ -157,7 +167,6 @@ module.exports = {
 
             const songs = rows.map(song => {
                 const plain = song.toJSON();
-                plain.artistName_new = plain.artistName || null;
                 plain.artistName = plain.user?.artistName || plain.user?.name || null;
                 return plain;
             });
@@ -221,39 +230,52 @@ module.exports = {
                 where: {
                     [db.Op.or]: [
                         { title: { [db.Op.like]: `%${query}%` } },
-                        { artistName: { [db.Op.like]: `%${query}%` } },
+                        { "$user.artistName$": { [db.Op.like]: `%${query}%` } },
+                        { "$user.name$": { [db.Op.like]: `%${query}%` } },
                     ],
                 },
                 include: [userInclude],
                 order: [["createdAt", "DESC"]],
                 limit,
+                subQuery: false,
             });
 
             const formattedSongs = songs.map(song => {
                 const plain = song.toJSON();
+                plain.artistName = plain.user?.artistName || plain.user?.name || null;
                 return plain;
             });
 
-            // Search artists by artistName on songs table
-            const artistRows = await db.songObj.findAll({
+            // Search artists by artistName on users table
+            const artistRows = await db.usersObj.findAll({
                 attributes: [
-                    "artistName",
-                    [db.Sequelize.fn("COUNT", db.Sequelize.col("Song.id")), "songCount"],
+                    "id", "name", "artistName", "profileImage",
+                    [db.Sequelize.fn("COUNT", db.Sequelize.col("songs.id")), "songCount"],
                 ],
                 where: {
-                    artistName: { [db.Op.like]: `%${query}%` },
+                    [db.Op.or]: [
+                        { artistName: { [db.Op.like]: `%${query}%` } },
+                        { name: { [db.Op.like]: `%${query}%` } },
+                    ],
                 },
-                include: [userInclude],
-                group: ["artistName"],
+                include: [{
+                    model: db.songObj,
+                    as: "songs",
+                    attributes: [],
+                    required: true,
+                }],
+                group: ["users.id"],
                 limit,
+                subQuery: false,
             });
 
             const formattedArtists = artistRows.map(row => {
                 const plain = row.toJSON();
                 return {
-                    artistName: plain.artistName,
+                    artistId: plain.id,
+                    artistName: plain.artistName || plain.name,
                     songCount: plain.songCount,
-                    profileImage: plain.user?.profileImage || null,
+                    profileImage: plain.profileImage || null,
                 };
             });
 
@@ -298,7 +320,7 @@ module.exports = {
     async getHomeFeed(limit = 100) {
         try {
             const songs = await db.songObj.findAll({
-                attributes: ["id", "title", "coverUrl", "audioUrl", "duration", "streamCount", "artistName"],
+                attributes: ["id", "title", "coverUrl", "audioUrl", "duration", "streamCount"],
                 include: [userInclude],
                 order: [["createdAt", "DESC"]],
                 limit,
@@ -306,7 +328,6 @@ module.exports = {
 
             return songs.map(song => {
                 const plain = song.toJSON();
-                plain.artistName_new = plain.artistName || null;
                 plain.artistName = plain.user?.artistName || plain.user?.name || null;
                 return plain;
             });
@@ -327,7 +348,6 @@ module.exports = {
 
             return featuredSongs.map(song => {
                 const plain = song.toJSON();
-                plain.artistName_new = plain.artistName || null;
                 plain.artistName = plain.user?.artistName || plain.user?.name || null;
                 return plain;
             });

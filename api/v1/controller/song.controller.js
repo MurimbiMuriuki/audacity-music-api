@@ -8,7 +8,7 @@ module.exports = {
     async uploadSong(req, res) {
         try {
             const userId = req.userId;
-            const { title, artistName } = req.body;
+            const { title } = req.body;
 
             if (!req.files || !req.files.audio) {
                 return res.status(400).json({
@@ -28,7 +28,6 @@ module.exports = {
             const data = {
                 userId,
                 title,
-                artistName,
                 coverUrl,
                 audioUrl,
                 duration,
@@ -43,7 +42,6 @@ module.exports = {
                 data: {
                     songId: song.id,
                     title: song.title,
-                    artistName_new: song.artistName,
                     totalUploads: totalUploads
                 }
             });
@@ -134,11 +132,10 @@ module.exports = {
     async updateSong(req, res) {
         try {
             const { id } = req.query;
-            const { title, artistName } = req.body;
+            const { title } = req.body;
 
             let updateData = {
                 title,
-                artistName
             };
 
             const uploads = [];

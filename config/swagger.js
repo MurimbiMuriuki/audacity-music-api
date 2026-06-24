@@ -10,6 +10,10 @@ const swaggerDocument = {
   },
   servers: [
     {
+      url: "https://api.audacitymusic.com/api/v1",
+      description: "Production",
+    },
+    {
       url: "http://localhost:8000/api/v1",
       description: "Local Development",
     },
@@ -59,7 +63,7 @@ const swaggerDocument = {
           audioUrl: { type: "string", nullable: true },
           duration: { type: "number", nullable: true },
           streamCount: { type: "integer" },
-          artistName: { type: "string", description: "Derived from user" },
+          artistName: { type: "string", description: "Derived from Users.artistName" },
           createdAt: { type: "string", format: "date-time" },
           updatedAt: { type: "string", format: "date-time" },
         },
