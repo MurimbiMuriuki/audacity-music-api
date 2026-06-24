@@ -4,6 +4,7 @@ const db = require("../models");
 const { Op, fn, col, where } = require("sequelize");
 const fs = require("fs");
 const path = require("path");
+const { deleteFromSupabase } = require("../helper/supabase.helper");
 
 const userInclude = {
     model: db.usersObj,
@@ -128,16 +129,11 @@ module.exports = {
         const song = await db.songObj.findByPk(id);
         if (!song) throw new Error("Song not found");
 
-
-        if (song.audioUrl) {
-            const audioPath = path.join(__dirname, "../../", song.audioUrl);
-            if (fs.existsSync(audioPath)) fs.unlinkSync(audioPath);
-        }
-        if (song.coverUrl) {
-            const coverPath = path.join(__dirname, "../../", song.coverUrl);
-            if (fs.existsSync(coverPath)) fs.unlinkSync(coverPath);
-        }
-
+        // Delete files from Supabase
+        await Promise.all([
+            deleteFromSupabase(song.audioUrl),
+            deleteFromSupabase(song.coverUrl),
+        ]);
 
         await db.songObj.destroy({ where: { id } });
 

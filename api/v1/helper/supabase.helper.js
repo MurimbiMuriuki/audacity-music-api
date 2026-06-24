@@ -31,4 +31,22 @@ async function uploadToSupabase(file) {
   return data.publicUrl;
 }
 
-module.exports = { uploadToSupabase };
+async function deleteFromSupabase(publicUrl) {
+  if (!publicUrl) return;
+
+  // URL format: https://<host>/storage/v1/object/public/<bucket>/<filename>
+  const match = publicUrl.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/);
+  if (!match) return;
+
+  const [, bucket, filePath] = match;
+
+  const { error } = await supabase.storage
+    .from(bucket)
+    .remove([filePath]);
+
+  if (error) {
+    console.error(`Supabase delete failed for ${bucket}/${filePath}:`, error.message);
+  }
+}
+
+module.exports = { uploadToSupabase, deleteFromSupabase };

@@ -2,6 +2,7 @@ var commonHelper = require("../helper/common.helper");
 const logger = require("../../../config/winston");
 const db = require("../models");
 const { Op, fn, col, where } = require("sequelize");
+const { deleteFromSupabase } = require("../helper/supabase.helper");
 
 const userInclude = {
     model: db.usersObj,
@@ -78,6 +79,15 @@ module.exports = {
     },
     async deleteSong(id) {
         try {
+            const song = await db.songObj.findByPk(id);
+            if (!song) return 0;
+
+            // Delete files from Supabase
+            await Promise.all([
+                deleteFromSupabase(song.audioUrl),
+                deleteFromSupabase(song.coverUrl),
+            ]);
+
             await db.playlistSongObj.destroy({
                 where: { songId: id }
             });
