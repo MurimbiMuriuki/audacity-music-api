@@ -140,6 +140,22 @@ module.exports = {
         return true;
     },
 
+    async removePlaylist(id) {
+        const playlist = await db.playlistObj.findByPk(id);
+        if (!playlist) throw new Error("Playlist not found");
+
+        // Delete cover from Supabase
+        await deleteFromSupabase(playlist.coverUrl);
+
+        // Delete associated playlist songs
+        await db.playlistSongObj.destroy({ where: { playlistId: id } });
+
+        // Delete the playlist
+        await db.playlistObj.destroy({ where: { id } });
+
+        return true;
+    },
+
      async fetchArtistStreams() {
         try {
             // Get all users who have songs

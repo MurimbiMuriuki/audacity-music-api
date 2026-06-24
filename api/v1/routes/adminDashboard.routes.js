@@ -9,6 +9,7 @@ router.get("/admin/getAllAdminDashboard",[authJwt.verifyToken, authJwt.isAdmin],
 router.get("/admin/getAllSubscribers",[authJwt.verifyToken, authJwt.isAdmin], adminDashboardController.getAllSubscribers);
 router.get("/admin/getAllUploadedSongs",[authJwt.verifyToken, authJwt.isAdmin], adminDashboardController.getAllUploadedSongs);
 router.delete("/admin/deleteSong",[authJwt.verifyToken, authJwt.isAdmin], adminDashboardController.deleteSong);
+router.delete("/admin/deletePlaylist",[authJwt.verifyToken, authJwt.isAdmin], adminDashboardController.deletePlaylist);
 
 // Get artist streams and payouts
 router.get("/admin/getArtistStreams",[authJwt.verifyToken, authJwt.isAdmin], adminDashboardController.getArtistStreams);

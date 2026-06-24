@@ -84,6 +84,25 @@ module.exports = {
             });
         }
     },
+    async deletePlaylist(req, res) {
+        try {
+            const { id } = req.query;
+
+            await adminDashboardService.removePlaylist(id);
+
+            res.status(200).json({
+                success: true,
+                message: "Playlist deleted successfully",
+            });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({
+                success: false,
+                message: error.message || "Server error",
+            });
+        }
+    },
+
     async getArtistStreams(req, res) {
         try {
             const streams = await adminDashboardService.fetchArtistStreams();
