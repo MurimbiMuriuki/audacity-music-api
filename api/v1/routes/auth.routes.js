@@ -9,6 +9,8 @@ router.post("/auth/register",[authController.validate("register")], authControll
 router.get("/auth/getAllUser",[authJwt.verifyToken],authController.getAllUsers);
 /*getUserById*/
 router.get("/auth/getUserById",[authJwt.verifyToken], authController.getUserById);
+/*updateProfile - logged in user updates own profile*/
+router.put("/auth/updateProfile",[authJwt.verifyToken], authController.updateProfile);
 /*updateUser*/
 router.put("/auth/updateUser/:id",[authJwt.verifyToken], authController.updateUser);
 /*deleteUser*/

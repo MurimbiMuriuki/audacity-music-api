@@ -129,6 +129,50 @@ module.exports = {
 
     },
 
+     /*updateProfile - logged in user updates own profile*/
+     async updateProfile(req, res) {
+        try {
+            const userId = req.userId;
+            const { artistName, paypalEmail } = req.body;
+
+            const payload = {};
+            if (artistName !== undefined) payload.artistName = artistName;
+            if (paypalEmail !== undefined) payload.paypalEmail = paypalEmail;
+
+            if (Object.keys(payload).length === 0) {
+                return res.status(400).json({
+                    status: false,
+                    message: "No valid fields to update",
+                    data: {}
+                });
+            }
+
+            // Check artistName uniqueness
+            if (payload.artistName) {
+                const existingUser = await authServices.getUserByArtistName(payload.artistName, userId);
+                if (existingUser) {
+                    return res.status(400).json({
+                        status: false,
+                        message: "Artist name is already taken",
+                        data: {}
+                    });
+                }
+            }
+
+            const updatedUser = await authServices.updateUser(payload, userId);
+
+            return res
+                .status(200)
+                .send(commonHelper.parseSuccessRespose(updatedUser, "Profile updated successfully"));
+        } catch (error) {
+            return res.status(400).json({
+                status: false,
+                message: error.response?.data?.error || error.message || "Profile update failed",
+                data: error.response?.data || {}
+            });
+        }
+    },
+
      /*updateUser*/
      async updateUser(req, res) {
         try {
@@ -141,7 +185,8 @@ module.exports = {
     
             const { id } = req.params;
             const payload = { ...req.body };
-    
+            console.log(payload);
+            console.log("User ID: ",id);
             // Hash password if present and valid
             if (payload.password && typeof payload.password === 'string' && payload.password.trim() !== '') {
                 const saltRounds = 10;

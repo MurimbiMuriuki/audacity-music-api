@@ -132,8 +132,8 @@ const swaggerDocument = {
                 type: "object",
                 required: ["email", "password"],
                 properties: {
-                  email: { type: "string", example: "john@example.com" },
-                  password: { type: "string", example: "password123" },
+                  email: { type: "string", example: "info@audacitymusic.com" },
+                  password: { type: "string", example: "Audacity@123" },
                 },
               },
             },
@@ -282,6 +282,31 @@ const swaggerDocument = {
         responses: {
           200: { description: "User details" },
           400: { description: "User not found" },
+        },
+      },
+    },
+    "/auth/updateProfile": {
+      put: {
+        tags: ["Auth"],
+        summary: "Update logged-in user's profile",
+        description: "Updates the authenticated user's artistName and/or paypalEmail. User ID is taken from the JWT token.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  artistName: { type: "string", example: "DJ Nova" },
+                  paypalEmail: { type: "string", example: "artist@paypal.com" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Profile updated successfully" },
+          400: { description: "No valid fields to update or update failed" },
         },
       },
     },

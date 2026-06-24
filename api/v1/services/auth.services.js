@@ -13,6 +13,23 @@ module.exports = {
             throw e;
         }
     },
+    /*getUserByArtistName - check uniqueness excluding a specific user*/
+    async getUserByArtistName(artistName, excludeUserId) {
+        try {
+            const whereClause = { artistName };
+            if (excludeUserId) {
+                whereClause.id = { [Op.ne]: excludeUserId };
+            }
+            let user = await db.usersObj.findOne({
+                where: whereClause,
+                raw: true
+            });
+            return user;
+        } catch (e) {
+            logger.errorLog.log("error", commonHelper.customizeCatchMsg(e));
+            throw e;
+        }
+    },
     /*getUserByEmail*/
     async getUserByEmail(email) {
         try {
