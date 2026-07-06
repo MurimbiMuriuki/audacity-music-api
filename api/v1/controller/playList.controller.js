@@ -58,6 +58,33 @@ module.exports = {
             });
         }
     },
+    async searchPlaylist(req, res) {
+        try {
+            const { query } = req.query;
+
+            if (!query) {
+                return res.status(400).json({
+                    success: false,
+                    message: "query parameter is required",
+                });
+            }
+
+            const data = await playListService.searchPlaylist(query);
+
+            res.status(200).json({
+                success: true,
+                message: "Playlists fetched successfully",
+                data: data,
+            });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({
+                success: false,
+                message: "Server error",
+            });
+        }
+    },
+
     async deletePlaylist(req, res) {
         try {
             const { playlistId } = req.query;

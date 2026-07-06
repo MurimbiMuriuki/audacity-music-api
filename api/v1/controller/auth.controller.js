@@ -129,6 +129,27 @@ module.exports = {
 
     },
 
+     /*getCurrentUser*/
+     async getCurrentUser(req, res) {
+        try {
+            let userId = req.userId;
+            const user = await authServices.getUserById(userId);
+            if (!user || user.length == 0) throw new Error("User not found");
+
+            return res
+                .status(200)
+                .send(commonHelper.parseSuccessRespose(user,
+                    "User displayed successfully"));
+        } catch (error) {
+            return res.status(400).json({
+                status: false,
+                message: error.response?.data?.error || error.message || "User fetch failed",
+                data: error.response?.data || {}
+            });
+        }
+
+    },
+
      /*updateProfile - logged in user updates own profile*/
      async updateProfile(req, res) {
         try {

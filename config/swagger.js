@@ -289,6 +289,17 @@ const swaggerDocument = {
         },
       },
     },
+    "/auth/getCurrentUser": {
+      get: {
+        tags: ["Auth"],
+        summary: "Get current logged-in user",
+        description: "Returns the authenticated user's details. User ID is taken from the JWT token.",
+        responses: {
+          200: { description: "User displayed successfully" },
+          400: { description: "User not found" },
+        },
+      },
+    },
     "/auth/updateProfile": {
       put: {
         tags: ["Auth"],
@@ -732,6 +743,26 @@ const swaggerDocument = {
         summary: "Get all playlists for current user",
         responses: {
           200: { description: "Playlists list" },
+        },
+      },
+    },
+    "/playList/searchPlaylist": {
+      get: {
+        tags: ["Playlists"],
+        summary: "Search playlists by name",
+        description: "Searches playlists by name using partial matching. Returns matching playlists with song count.",
+        parameters: [
+          {
+            name: "query",
+            in: "query",
+            required: true,
+            schema: { type: "string" },
+            description: "Search term to match against playlist names",
+          },
+        ],
+        responses: {
+          200: { description: "Playlists fetched successfully" },
+          400: { description: "query parameter is required" },
         },
       },
     },
