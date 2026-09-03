@@ -1,6 +1,8 @@
 const crypto = require("crypto");
 const path = require("path");
+const sharp = require("sharp");
 const supabase = require("../../../config/supabase");
+const { transcodeAudioToAac } = require("./audioTranscode.helper");
 
 const UPLOAD_CONFIG = {
   audio: { bucket: "audios", contentType: "audio/" },
@@ -8,15 +10,49 @@ const UPLOAD_CONFIG = {
   playlistCover: { bucket: "playlists", contentType: "image/" },
 };
 
+// Cover images are only ever displayed as small thumbnails (admin tables,
+// playlist rows, mobile art) - downsize + re-encode as webp instead of
+// storing the full-resolution upload.
+const THUMBNAIL_FIELDS = new Set(["cover", "playlistCover"]);
+const THUMBNAIL_MAX_DIMENSION = 500;
+const THUMBNAIL_WEBP_QUALITY = 80;
+
 async function uploadToSupabase(file) {
   const config = UPLOAD_CONFIG[file.fieldname] || { bucket: "misc" };
-  const ext = path.extname(file.originalname);
+
+  let buffer = file.buffer;
+  let contentType = file.mimetype;
+  let ext = path.extname(file.originalname);
+
+  if (THUMBNAIL_FIELDS.has(file.fieldname)) {
+    buffer = await sharp(file.buffer)
+      .resize(THUMBNAIL_MAX_DIMENSION, THUMBNAIL_MAX_DIMENSION, {
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .webp({ quality: THUMBNAIL_WEBP_QUALITY })
+      .toBuffer();
+    contentType = "image/webp";
+    ext = ".webp";
+  }
+
+  if (file.fieldname === "audio") {
+    try {
+      const transcoded = await transcodeAudioToAac(file.buffer, ext);
+      buffer = transcoded.buffer;
+      contentType = transcoded.mimetype;
+      ext = transcoded.ext;
+    } catch (err) {
+      console.error("Audio transcode failed, uploading original file:", err.message);
+    }
+  }
+
   const fileName = `${Date.now()}-${crypto.randomUUID()}${ext}`;
 
   const { error } = await supabase.storage
     .from(config.bucket)
-    .upload(fileName, file.buffer, {
-      contentType: file.mimetype,
+    .upload(fileName, buffer, {
+      contentType,
       upsert: false,
     });
 
