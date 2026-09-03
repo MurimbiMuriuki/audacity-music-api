@@ -1,6 +1,6 @@
 const songServices = require("../services/song.service");
 const { getAudioDurationFromBuffer } = require("../helper/audio.helper");
-const { uploadToSupabase } = require("../helper/supabase.helper");
+const { uploadToSupabase, deleteFromSupabase } = require("../helper/supabase.helper");
 
 
 module.exports = {
@@ -134,6 +134,15 @@ module.exports = {
             const { id } = req.query;
             const { title } = req.body;
 
+            const existingSong = await songServices.getByIdSong(id);
+
+            if (!existingSong) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Song not found"
+                });
+            }
+
             let updateData = {
                 title,
             };
@@ -159,14 +168,12 @@ module.exports = {
 
             await Promise.all(uploads);
 
-            const updated = await songServices.updateSong(id, updateData);
+            await songServices.updateSong(id, updateData);
 
-            if (!updated) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Song not found"
-                });
-            }
+            await Promise.all([
+                updateData.coverUrl ? deleteFromSupabase(existingSong.coverUrl) : Promise.resolve(),
+                updateData.audioUrl ? deleteFromSupabase(existingSong.audioUrl) : Promise.resolve(),
+            ]);
 
             res.status(200).json({
                 success: true,
