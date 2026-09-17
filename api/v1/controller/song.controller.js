@@ -1,6 +1,6 @@
 const songServices = require("../services/song.service");
 const { getAudioDurationFromBuffer } = require("../helper/audio.helper");
-const { uploadToSupabase, deleteFromSupabase } = require("../helper/supabase.helper");
+const { uploadToSupabase, uploadSongCoverThumbnail, deleteFromSupabase } = require("../helper/supabase.helper");
 
 
 module.exports = {
@@ -20,15 +20,19 @@ module.exports = {
             const audioFile = req.files.audio[0];
             const duration = await getAudioDurationFromBuffer(audioFile.buffer);
 
-            const [audioUrl, coverUrl] = await Promise.all([
+            const coverFile = req.files.cover ? req.files.cover[0] : null;
+
+            const [audioUrl, coverUrl, thumbnailUrl] = await Promise.all([
                 uploadToSupabase(audioFile),
-                req.files.cover ? uploadToSupabase(req.files.cover[0]) : Promise.resolve(null),
+                coverFile ? uploadToSupabase(coverFile) : Promise.resolve(null),
+                coverFile ? uploadSongCoverThumbnail(coverFile) : Promise.resolve(null),
             ]);
 
             const data = {
                 userId,
                 title,
                 coverUrl,
+                thumbnailUrl,
                 audioUrl,
                 duration,
             };
@@ -150,8 +154,10 @@ module.exports = {
             const uploads = [];
 
             if (req.files && req.files.cover) {
+                const coverFile = req.files.cover[0];
                 uploads.push(
-                    uploadToSupabase(req.files.cover[0]).then(url => { updateData.coverUrl = url; })
+                    uploadToSupabase(coverFile).then(url => { updateData.coverUrl = url; }),
+                    uploadSongCoverThumbnail(coverFile).then(url => { updateData.thumbnailUrl = url; })
                 );
             }
 
@@ -172,6 +178,7 @@ module.exports = {
 
             await Promise.all([
                 updateData.coverUrl ? deleteFromSupabase(existingSong.coverUrl) : Promise.resolve(),
+                updateData.thumbnailUrl ? deleteFromSupabase(existingSong.thumbnailUrl) : Promise.resolve(),
                 updateData.audioUrl ? deleteFromSupabase(existingSong.audioUrl) : Promise.resolve(),
             ]);
 

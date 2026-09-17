@@ -133,6 +133,7 @@ module.exports = {
         await Promise.all([
             deleteFromSupabase(song.audioUrl),
             deleteFromSupabase(song.coverUrl),
+            deleteFromSupabase(song.thumbnailUrl),
         ]);
 
         await db.songObj.destroy({ where: { id } });

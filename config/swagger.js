@@ -59,7 +59,8 @@ const swaggerDocument = {
           id: { type: "integer" },
           userId: { type: "integer" },
           title: { type: "string" },
-          coverUrl: { type: "string", nullable: true },
+          coverUrl: { type: "string", nullable: true, description: "Full-resolution cover image" },
+          thumbnailUrl: { type: "string", nullable: true, description: "300x300 WebP thumbnail of the cover, for low-bandwidth clients" },
           audioUrl: { type: "string", nullable: true },
           duration: { type: "number", nullable: true },
           streamCount: { type: "integer" },
@@ -607,7 +608,7 @@ const swaggerDocument = {
       get: {
         tags: ["Songs"],
         summary: "Get home feed songs for playback queue",
-        description: "Returns up to 200 songs with lightweight metadata (id, title, coverUrl, audioUrl, duration, artist info). The client should shuffle this array locally for shuffle mode — no server-side shuffle needed.",
+        description: "Returns up to 200 songs with lightweight metadata (id, title, coverUrl, thumbnailUrl, audioUrl, duration, artist info). The client should shuffle this array locally for shuffle mode — no server-side shuffle needed.",
         parameters: [
           {
             name: "limit",
@@ -638,6 +639,7 @@ const swaggerDocument = {
                               id: { type: "integer" },
                               title: { type: "string" },
                               coverUrl: { type: "string", nullable: true },
+                              thumbnailUrl: { type: "string", nullable: true },
                               audioUrl: { type: "string" },
                               duration: { type: "number", nullable: true },
                               streamCount: { type: "integer" },
@@ -867,7 +869,7 @@ const swaggerDocument = {
       get: {
         tags: ["Playlist Songs"],
         summary: "Get all songs in a playlist",
-        description: "Returns all songs metadata (id, title, coverUrl, audioUrl, duration, artist info) for a playlist. The client should use this data to build a local queue and handle shuffle/unshuffle locally — no server-side shuffle needed.",
+        description: "Returns all songs metadata (id, title, coverUrl, thumbnailUrl, audioUrl, duration, artist info) for a playlist. The client should use this data to build a local queue and handle shuffle/unshuffle locally — no server-side shuffle needed.",
         parameters: [
           {
             name: "playlistId",

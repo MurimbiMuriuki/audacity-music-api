@@ -28,7 +28,7 @@ module.exports = {
                     {
                         model: db.songObj,
                         as: "song",
-                        attributes: ["id", "userId", "title", "coverUrl", "audioUrl", "duration", "streamCount"],
+                        attributes: ["id", "userId", "title", "coverUrl", "thumbnailUrl", "audioUrl", "duration", "streamCount"],
                         include: [{
                             model: db.usersObj,
                             as: "user",

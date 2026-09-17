@@ -86,6 +86,7 @@ module.exports = {
             await Promise.all([
                 deleteFromSupabase(song.audioUrl),
                 deleteFromSupabase(song.coverUrl),
+                deleteFromSupabase(song.thumbnailUrl),
             ]);
 
             await db.playlistSongObj.destroy({
@@ -330,7 +331,7 @@ module.exports = {
     async getHomeFeed(limit = 100) {
         try {
             const songs = await db.songObj.findAll({
-                attributes: ["id", "title", "coverUrl", "audioUrl", "duration", "streamCount"],
+                attributes: ["id", "title", "coverUrl", "thumbnailUrl", "audioUrl", "duration", "streamCount"],
                 include: [userInclude],
                 order: [["createdAt", "DESC"]],
                 limit,
@@ -350,7 +351,7 @@ module.exports = {
     async fetchLandingPageData() {
         try {
             const featuredSongs = await db.songObj.findAll({
-                attributes: ["id", "title", "coverUrl", "audioUrl"],
+                attributes: ["id", "title", "coverUrl", "thumbnailUrl", "audioUrl"],
                 include: [userInclude],
                 order: [["createdAt", "DESC"]],
                 limit: 2,

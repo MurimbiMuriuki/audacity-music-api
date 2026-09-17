@@ -20,6 +20,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
     },
 
+    thumbnailUrl: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
     audioUrl: {
       type: DataTypes.STRING,
       allowNull: true,

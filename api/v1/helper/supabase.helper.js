@@ -10,12 +10,44 @@ const UPLOAD_CONFIG = {
   playlistCover: { bucket: "playlists", contentType: "image/" },
 };
 
-// Cover images are only ever displayed as small thumbnails (admin tables,
-// playlist rows, mobile art) - downsize + re-encode as webp instead of
-// storing the full-resolution upload.
-const THUMBNAIL_FIELDS = new Set(["cover", "playlistCover"]);
-const THUMBNAIL_MAX_DIMENSION = 500;
-const THUMBNAIL_WEBP_QUALITY = 80;
+// Playlist covers have no separate thumbnail column, so they're still
+// replaced in place with a single resized WebP.
+const REPLACE_WITH_THUMBNAIL_FIELDS = new Set(["playlistCover"]);
+const PLAYLIST_THUMBNAIL_MAX_DIMENSION = 500;
+
+// Song covers keep their original upload (coverUrl) and additionally get a
+// dedicated small thumbnail (thumbnailUrl) for low-bandwidth clients.
+const SONG_THUMBNAIL_MAX_DIMENSION = 300;
+
+const WEBP_QUALITY = 80;
+
+async function resizeToWebp(buffer, maxDimension, quality = WEBP_QUALITY) {
+  return sharp(buffer)
+    .resize(maxDimension, maxDimension, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality })
+    .toBuffer();
+}
+
+async function uploadBufferToSupabase(bucket, buffer, ext, contentType) {
+  const fileName = `${Date.now()}-${crypto.randomUUID()}${ext}`;
+
+  const { error } = await supabase.storage
+    .from(bucket)
+    .upload(fileName, buffer, {
+      contentType,
+      upsert: false,
+    });
+
+  if (error) {
+    throw new Error(`Supabase upload failed: ${error.message}`);
+  }
+
+  const { data } = supabase.storage
+    .from(bucket)
+    .getPublicUrl(fileName);
+
+  return data.publicUrl;
+}
 
 async function uploadToSupabase(file) {
   const config = UPLOAD_CONFIG[file.fieldname] || { bucket: "misc" };
@@ -24,14 +56,8 @@ async function uploadToSupabase(file) {
   let contentType = file.mimetype;
   let ext = path.extname(file.originalname);
 
-  if (THUMBNAIL_FIELDS.has(file.fieldname)) {
-    buffer = await sharp(file.buffer)
-      .resize(THUMBNAIL_MAX_DIMENSION, THUMBNAIL_MAX_DIMENSION, {
-        fit: "inside",
-        withoutEnlargement: true,
-      })
-      .webp({ quality: THUMBNAIL_WEBP_QUALITY })
-      .toBuffer();
+  if (REPLACE_WITH_THUMBNAIL_FIELDS.has(file.fieldname)) {
+    buffer = await resizeToWebp(buffer, PLAYLIST_THUMBNAIL_MAX_DIMENSION);
     contentType = "image/webp";
     ext = ".webp";
   }
@@ -47,24 +73,14 @@ async function uploadToSupabase(file) {
     }
   }
 
-  const fileName = `${Date.now()}-${crypto.randomUUID()}${ext}`;
+  return uploadBufferToSupabase(config.bucket, buffer, ext, contentType);
+}
 
-  const { error } = await supabase.storage
-    .from(config.bucket)
-    .upload(fileName, buffer, {
-      contentType,
-      upsert: false,
-    });
-
-  if (error) {
-    throw new Error(`Supabase upload failed: ${error.message}`);
-  }
-
-  const { data } = supabase.storage
-    .from(config.bucket)
-    .getPublicUrl(fileName);
-
-  return data.publicUrl;
+// Generates and uploads a 300x300 WebP thumbnail for a song cover, stored
+// alongside (not replacing) the original upload in the `covers` bucket.
+async function uploadSongCoverThumbnail(file) {
+  const buffer = await resizeToWebp(file.buffer, SONG_THUMBNAIL_MAX_DIMENSION);
+  return uploadBufferToSupabase(UPLOAD_CONFIG.cover.bucket, buffer, ".webp", "image/webp");
 }
 
 async function deleteFromSupabase(publicUrl) {
@@ -85,4 +101,4 @@ async function deleteFromSupabase(publicUrl) {
   }
 }
 
-module.exports = { uploadToSupabase, deleteFromSupabase };
+module.exports = { uploadToSupabase, uploadSongCoverThumbnail, deleteFromSupabase };
